@@ -10,6 +10,8 @@ import {
   viewChild,
   ElementRef,
 } from '@angular/core';
+import { SourceFileId } from '../../core/models';
+import { highlight } from './highlight';
 
 const DEBOUNCE_MS = 150;
 
@@ -28,7 +30,8 @@ const DEBOUNCE_MS = 150;
       }
     </div>
     <div class="area">
-      <pre class="mirror" aria-hidden="true" #mirror><code>{{ draft() }}</code><br /></pre>
+      <pre class="mirror" aria-hidden="true" #mirror><code>@for (token of tokens(); track $index) {<span
+        [class]="'tk tk--' + token.kind">{{ token.text }}</span>}</code><br /></pre>
       <textarea
         class="input"
         spellcheck="false"
@@ -110,6 +113,41 @@ const DEBOUNCE_MS = 150;
       color: transparent;
     }
 
+    .tk--tag {
+      color: var(--syntax-tag);
+    }
+    .tk--bracket {
+      color: var(--syntax-bracket);
+    }
+    .tk--selector {
+      color: var(--syntax-selector);
+    }
+    .tk--property {
+      color: var(--syntax-property);
+    }
+    .tk--value {
+      color: var(--syntax-value);
+    }
+    .tk--atrule {
+      color: var(--syntax-atrule);
+    }
+    .tk--keyword {
+      color: var(--syntax-keyword);
+    }
+    .tk--function {
+      color: var(--syntax-function);
+    }
+    .tk--string {
+      color: var(--syntax-string);
+    }
+    .tk--number {
+      color: var(--syntax-number);
+    }
+    .tk--comment {
+      color: var(--syntax-comment);
+      font-style: italic;
+    }
+
     .input:focus-visible {
       outline: 1px solid var(--focus-ring);
       outline-offset: -1px;
@@ -124,10 +162,12 @@ const DEBOUNCE_MS = 150;
 })
 export class CodeEditor implements OnDestroy {
   readonly value = input.required<string>();
+  readonly language = input.required<SourceFileId>();
   readonly label = input('Editor de código');
   readonly valueChange = output<string>();
 
   protected readonly draft = signal('');
+  protected readonly tokens = computed(() => highlight(this.draft(), this.language()));
   protected readonly lineNumbers = computed(() =>
     Array.from({ length: this.draft().split('\n').length }, (_, i) => i + 1),
   );
