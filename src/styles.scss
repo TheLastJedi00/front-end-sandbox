@@ -1,1 +1,116 @@
-/* You can add global styles to this file, and also import other style files */
+/* Design tokens — tema escuro inspirado no VS Code Dark+.
+   A estetica de IDE e parte do conteudo didatico: o aluno deve sentir que
+   esta no lugar onde software de verdade e escrito. */
+
+:root {
+  /* Superficies */
+  --surface-app: #1e1e1e;
+  --surface-editor: #1e1e1e;
+  --surface-panel: #252526;
+  --surface-bar: #323233;
+  --surface-title: #3c3c3c;
+  --surface-activity: #333333;
+  --surface-status: #007acc;
+  --surface-raised: #2d2d2d;
+  --surface-overlay: #252526f2;
+
+  /* Bordas e divisorias */
+  --border-soft: #3c3c3c;
+  --border-strong: #4a4a4a;
+  --focus-ring: #4daafc;
+
+  /* Texto */
+  --text-primary: #d4d4d4;
+  --text-muted: #9d9d9d;
+  --text-dim: #6e7681;
+  --text-inverse: #ffffff;
+
+  /* Sintaxe */
+  --syntax-tag: #569cd6;
+  --syntax-bracket: #808080;
+  --syntax-selector: #d7ba7d;
+  --syntax-property: #9cdcfe;
+  --syntax-value: #ce9178;
+  --syntax-atrule: #c586c0;
+  --syntax-keyword: #c586c0;
+  --syntax-function: #dcdcaa;
+  --syntax-string: #ce9178;
+  --syntax-number: #b5cea8;
+  --syntax-comment: #6a9955;
+
+  /* Estado */
+  --state-error: #f48771;
+  --state-warning: #cca700;
+  --state-success: #4ec9b0;
+  --state-hint: #75beff;
+
+  /* Cores do jogo (as mesmas que o aluno digita) */
+  --game-blue: #4aa3ff;
+  --game-red: #e0504a;
+  --game-green: #4caf50;
+
+  /* Tipografia */
+  --font-mono: 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace;
+  --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --text-code: 1rem;
+  --text-code-projector: 1.125rem;
+  --line-code: 1.6;
+
+  /* Espacamento */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  /* Formas */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  block-size: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-app);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Foco sempre visivel — requisito de acessibilidade da apresentacao. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+a {
+  color: var(--state-hint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
