@@ -26,6 +26,7 @@ import { ActivityBar } from '../../ide/activity-bar/activity-bar';
 import { CodeEditor } from '../../ide/code-editor/code-editor';
 import { FileTabs } from '../../ide/file-tabs/file-tabs';
 import { GamePreview } from '../../ide/game-preview/game-preview';
+import { PreviewInput } from '../../ide/game-preview/preview-input';
 import { IdeShell } from '../../ide/ide-shell/ide-shell';
 import { ProblemsPanel } from '../../ide/problems-panel/problems-panel';
 import { StatusBar } from '../../ide/status-bar/status-bar';
@@ -44,6 +45,7 @@ import { GoalPanel } from './goal-panel';
     CodeEditor,
     ProblemsPanel,
     GamePreview,
+    PreviewInput,
     GoalPanel,
   ],
   providers: [GameLoop],
@@ -67,7 +69,20 @@ import { GoalPanel } from './goal-panel';
       <ng-container idePreview>
         <app-goal-panel [level]="level()" [validation]="validation()" />
         <div class="stage-wrapper">
-          <app-game-preview [scene]="scene()" [state]="loop.state()" />
+          <app-game-preview
+            appPreviewInput
+            [keys]="loop.keys"
+            [enabled]="level().interactive"
+            [showGoal]="level().interactive"
+            [scene]="scene()"
+            [state]="loop.state()"
+          />
+          @if (level().interactive) {
+            <p class="controls">
+              Clique no palco e use <kbd>A</kbd> <kbd>D</kbd> para andar e
+              <kbd>espaço</kbd> para pular.
+            </p>
+          }
         </div>
       </ng-container>
 
@@ -79,6 +94,21 @@ import { GoalPanel } from './goal-panel';
   styles: `
     .stage-wrapper {
       padding: 0 var(--space-4) var(--space-4);
+    }
+
+    .controls {
+      margin: var(--space-2) 0 0;
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+    }
+
+    kbd {
+      padding: 0.05rem 0.35rem;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--surface-raised);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
     }
   `,
 })
