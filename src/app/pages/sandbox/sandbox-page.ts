@@ -81,8 +81,12 @@ import { LevelProgress } from './level-progress';
           <button type="button" class="tool" (click)="showSolution()">Mostrar solução</button>
           <button type="button" class="tool" (click)="restart()">Reiniciar fase</button>
         </div>
-        <div class="stage-wrapper" [class.stage-wrapper--done]="validation().completed">
-          <app-game-stage [scene]="scene()" [interactive]="level().interactive" />
+        <div class="stage-wrapper">
+          <app-game-stage
+            [scene]="scene()"
+            [interactive]="level().interactive"
+            [completed]="validation().completed"
+          />
           @if (level().interactive) {
             <p class="controls">
               Clique no palco e use <kbd>A</kbd> <kbd>D</kbd> para andar e
@@ -142,12 +146,6 @@ import { LevelProgress } from './level-progress';
       font-size: 0.8125rem;
     }
 
-    .stage-wrapper--done app-game-stage {
-      display: block;
-      border-radius: var(--radius-md);
-      outline: 2px solid var(--state-success);
-      outline-offset: 3px;
-    }
 
     .done {
       display: flex;

@@ -57,6 +57,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 
     .preview {
       background: var(--surface-panel);
+      overflow-y: auto;
     }
 
     @media (max-inline-size: 900px) {

@@ -19,6 +19,7 @@ import { PreviewInput } from '../../ide/game-preview/preview-input';
       [keys]="loop.keys"
       [enabled]="interactive()"
       [showGoal]="interactive()"
+      [completed]="completed()"
       [scene]="scene()"
       [state]="loop.state()"
     />
@@ -32,6 +33,7 @@ import { PreviewInput } from '../../ide/game-preview/preview-input';
 export class GameStage {
   readonly scene = input.required<Scene>();
   readonly interactive = input(false);
+  readonly completed = input(false);
 
   protected readonly loop = inject(GameLoop);
 }

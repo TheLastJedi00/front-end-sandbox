@@ -31,7 +31,7 @@ const DEBOUNCE_MS = 150;
     </div>
     <div class="area">
       <pre class="mirror" aria-hidden="true" #mirror><code>@for (token of tokens(); track $index) {<span
-        [class]="'tk tk--' + token.kind">{{ token.text }}</span>}</code><br /></pre>
+        [attr.class]="'tk tk--' + token.kind">{{ token.text }}</span>}</code><br /></pre>
       <textarea
         class="input"
         spellcheck="false"

@@ -33,6 +33,8 @@ export interface Scene {
   readonly sky: SceneElement;
   readonly ground: SceneElement;
   readonly ball: SceneElement;
+  /** Todas as animacoes declaradas no CSS, aplicadas ou nao. */
+  readonly animations: readonly CssAnimation[];
   /** Nome da animacao aplicada em `ball`, se houver. */
   readonly ballAnimation: string | null;
   /** Definicao da animacao aplicada, quando ela existe no CSS. */
@@ -74,6 +76,7 @@ export function buildScene(html: HtmlParseResult, css: CssParseResult): Scene {
     sky: buildElement('sky', html, css, skyNode !== undefined),
     ground: buildElement('ground', html, css, isInside(html.nodes, 'sky', 'ground')),
     ball: buildElement('ball', html, css, isInside(html.nodes, 'sky', 'ball')),
+    animations: css.animations,
     ballAnimation,
     animation: ballAnimation ? (findAnimation(css, ballAnimation) ?? null) : null,
   };
@@ -83,6 +86,7 @@ export const EMPTY_SCENE: Scene = {
   sky: { tag: 'sky', present: false, visible: false, colorName: null, color: NO_COLOR },
   ground: { tag: 'ground', present: false, visible: false, colorName: null, color: NO_COLOR },
   ball: { tag: 'ball', present: false, visible: false, colorName: null, color: NO_COLOR },
+  animations: [],
   ballAnimation: null,
   animation: null,
 };

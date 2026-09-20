@@ -46,9 +46,12 @@ const CHECKS: Readonly<Record<LevelCheckId, (input: ValidationInput) => boolean>
   'ball-red': ({ scene }) => scene.ball.colorName === 'red',
   'ground-green': ({ scene }) => scene.ground.colorName === 'green',
 
+  // Declarar e aplicar sao dois passos distintos da fase 2, entao cada objetivo
+  // acende sozinho: a animacao conta mesmo antes de estar ligada na bola.
   'animation-declared': ({ scene }) =>
-    scene.animation !== null &&
-    KEYFRAME_STEPS.every((step) => scene.animation!.keyframes.some((frame) => frame.step === step)),
+    scene.animations.some((animation) =>
+      KEYFRAME_STEPS.every((step) => animation.keyframes.some((frame) => frame.step === step)),
+    ),
   'animation-applied': ({ scene }) => scene.ball.visible && scene.animation !== null,
   'ball-jumped': ({ state }) => state.hasJumped,
 

@@ -25,7 +25,7 @@ import { describeScene, Scene } from '../../engine/runtime/scene';
   host: { class: 'game-preview' },
   template: `
     <p class="sr-only" role="status">{{ description() }}</p>
-    <div class="stage">
+    <div class="stage" [class.stage--done]="completed()">
       @if (model().skyColor !== 'transparent') {
         <sky [style.background]="model().skyColor">
           @if (model().ground.visible) {
@@ -79,10 +79,21 @@ import { describeScene, Scene } from '../../engine/runtime/scene';
       position: relative;
       aspect-ratio: 16 / 9;
       inline-size: 100%;
+      /* O palco nunca pode empurrar os controles para fora da tela: numa
+         apresentacao, rolar a pagina para achar o botao custa caro. */
+      max-inline-size: calc(38vh * 16 / 9);
+      margin-inline: auto;
+      transition: outline-color 200ms ease;
+      outline: 2px solid transparent;
+      outline-offset: 3px;
       overflow: hidden;
       border-radius: var(--radius-md);
       background: #101010;
       box-shadow: inset 0 0 0 1px var(--border-soft);
+    }
+
+    .stage--done {
+      outline-color: var(--state-success);
     }
 
     sky {
@@ -147,6 +158,7 @@ export class GamePreview {
   readonly scene = input.required<Scene>();
   readonly state = input.required<GameState>();
   readonly showGoal = input(false);
+  readonly completed = input(false);
 
   /** O modelo e calculado aqui para que so este componente redesenhe a cada quadro. */
   protected readonly model = computed(() =>
