@@ -26,63 +26,63 @@ Princípios: `engine/` é puro e testável; `ide/` só apresenta; estado em sign
 
 ## Fase 0 — Fundação
 
-- [ ] **T0.1** — Limpar o boilerplate de `app.html`/`app.scss` e definir o shell da aplicação.
-- [ ] **T0.2** — Criar rotas `/` (abertura) e `/sandbox/:levelId` com lazy loading em `app.routes.ts`.
-- [ ] **T0.3** — Definir os design tokens SCSS do tema escuro estilo VS Code (cores, tipografia monoespaçada, espaçamentos) em `src/styles.scss`.
-- [ ] **T0.4** — Criar os modelos de domínio em `core/models`: `Level`, `SourceFile` (`html|css|js`), `GameState`, `ValidationResult`.
-- [ ] **T0.5** — Garantir que o sandbox só execute no browser (`isPlatformBrowser` / `afterNextRender`), já que o projeto está com SSR ligado.
+- [x] **T0.1** — Limpar o boilerplate de `app.html`/`app.scss` e definir o shell da aplicação.
+- [x] **T0.2** — Criar rotas `/` (abertura) e `/sandbox/:levelId` com lazy loading em `app.routes.ts`.
+- [x] **T0.3** — Definir os design tokens SCSS do tema escuro estilo VS Code (cores, tipografia monoespaçada, espaçamentos) em `src/styles.scss`.
+- [x] **T0.4** — Criar os modelos de domínio em `core/models`: `Level`, `SourceFile` (`html|css|js`), `GameState`, `ValidationResult`.
+- [x] **T0.5** — Garantir que o sandbox só execute no browser (`isPlatformBrowser` / `afterNextRender`), já que o projeto está com SSR ligado.
 
 ## Fase 1 — Casca da IDE
 
-- [ ] **T1.1** — `ide/ide-shell`: layout de duas colunas (código à esquerda, preview à direita), legível em projetor 16:9.
-- [ ] **T1.2** — `ide/title-bar` e `ide/activity-bar`: barras decorativas que completam a estética de IDE.
-- [ ] **T1.3** — `ide/file-tabs`: abas `index.html`, `style.css`, `script.js` controladas por signal e habilitadas conforme a fase.
-- [ ] **T1.4** — `ide/editor`: área de edição com numeração de linhas, fonte monoespaçada e `output()` de mudança com debounce.
-- [ ] **T1.5** — `ide/editor`: realce de sintaxe por regex sobre um `<pre>` espelhado, sem dependência externa.
-- [ ] **T1.6** — `ide/problems-panel`: painel inferior com os erros do parser e as dicas da fase.
+- [x] **T1.1** — `ide/ide-shell`: layout de duas colunas (código à esquerda, preview à direita), legível em projetor 16:9.
+- [x] **T1.2** — `ide/title-bar` e `ide/activity-bar`: barras decorativas que completam a estética de IDE.
+- [x] **T1.3** — `ide/file-tabs`: abas `index.html`, `style.css`, `script.js` controladas por signal e habilitadas conforme a fase.
+- [x] **T1.4** — `ide/editor`: área de edição com numeração de linhas, fonte monoespaçada e `output()` de mudança com debounce.
+- [x] **T1.5** — `ide/editor`: realce de sintaxe por regex sobre um `<pre>` espelhado, sem dependência externa.
+- [x] **T1.6** — `ide/problems-panel`: painel inferior com os erros do parser e as dicas da fase.
 
 ## Fase 2 — Engine: parsers
 
-- [ ] **T2.1** — `engine/parsers/html-parser`: transforma `<sky>`, `<ground>`, `<ball>` numa árvore de nós, com erros amigáveis (tag não fechada, tag desconhecida, aninhamento inválido).
-- [ ] **T2.2** — `engine/parsers/css-parser`: blocos `seletor { propriedade: valor }` com as propriedades permitidas (`color`, `animation`) e aviso para o restante.
-- [ ] **T2.3** — `engine/parsers/css-parser`: suporte ao bloco `@animation nome { inicio | meio | fim { position: n } }` (sintaxe simplificada da spec).
-- [ ] **T2.4** — `engine/parsers/js-parser`: interpretador mínimo para `if (key("X")) { ... }` e para as chamadas `avancar()`, `recuar()` e `element("ball").animation("jump")`.
-- [ ] **T2.5** — Testes unitários dos três parsers (casos válidos + os erros de sintaxe típicos de um aluno).
+- [x] **T2.1** — `engine/parsers/html-parser`: transforma `<sky>`, `<ground>`, `<ball>` numa árvore de nós, com erros amigáveis (tag não fechada, tag desconhecida, aninhamento inválido).
+- [x] **T2.2** — `engine/parsers/css-parser`: blocos `seletor { propriedade: valor }` com as propriedades permitidas (`color`, `animation`) e aviso para o restante.
+- [x] **T2.3** — `engine/parsers/css-parser`: suporte ao bloco `@animation nome { inicio | meio | fim { position: n } }` (sintaxe simplificada da spec).
+- [x] **T2.4** — `engine/parsers/js-parser`: interpretador mínimo para `if (key("X")) { ... }` e para as chamadas `avancar()`, `recuar()` e `element("ball").animation("jump")`.
+- [x] **T2.5** — Testes unitários dos três parsers (casos válidos + os erros de sintaxe típicos de um aluno).
 
 ## Fase 3 — Engine: runtime
 
-- [ ] **T3.1** — `engine/runtime/scene`: converte a árvore HTML + os estilos numa cena (céu, terreno, bola) com posições e cores.
-- [ ] **T3.2** — `engine/runtime/renderer`: desenha a cena no preview (ver **Q.2**).
-- [ ] **T3.3** — `engine/runtime/animator`: executa a animação declarada interpolando a posição vertical da bola entre `inicio`, `meio` e `fim`.
-- [ ] **T3.4** — `engine/runtime/input`: captura `A`, `D` e `space` somente quando o preview está focado, sem sequestrar o teclado do editor.
-- [ ] **T3.5** — `engine/runtime/game-loop`: `requestAnimationFrame` com play/pause/reset amarrado ao ciclo de vida do componente.
-- [ ] **T3.6** — Testes unitários de cena e animação.
+- [x] **T3.1** — `engine/runtime/scene`: converte a árvore HTML + os estilos numa cena (céu, terreno, bola) com posições e cores.
+- [x] **T3.2** — `engine/runtime/renderer`: desenha a cena no preview (ver **Q.2**).
+- [x] **T3.3** — `engine/runtime/animator`: executa a animação declarada interpolando a posição vertical da bola entre `inicio`, `meio` e `fim`.
+- [x] **T3.4** — `engine/runtime/input`: captura `A`, `D` e `space` somente quando o preview está focado, sem sequestrar o teclado do editor.
+- [x] **T3.5** — `engine/runtime/game-loop`: `requestAnimationFrame` com play/pause/reset amarrado ao ciclo de vida do componente.
+- [x] **T3.6** — Testes unitários de cena e animação.
 
 ## Fase 4 — Fases do jogo
 
-- [ ] **T4.1** — `levels/level-definitions`: as 3 fases declarativas (enunciado, código inicial, arquivos habilitados, critério de sucesso, dicas).
-- [ ] **T4.2** — `engine/validation/level-validator`: valida o resultado por estrutura e semântica, não por texto literal (aceita variações de formatação).
-- [ ] **T4.3** — **Fase 1 do jogo**: posicionar `<ball>` e `<ground>` dentro de `<sky>` e colorir os três elementos; conclui ao atingir a cena esperada.
-- [ ] **T4.4** — **Fase 2 do jogo**: declarar `@animation jump` e aplicá-la em `ball`; conclui quando a bola pula no preview.
-- [ ] **T4.5** — **Fase 3 do jogo**: mover a bola com `A`/`D` e pular com `space`; conclui ao alcançar o objetivo no terreno (ver **Q.6**).
-- [ ] **T4.6** — Feedback de conclusão: destaque no preview, botão "Próxima fase" e avanço de rota.
+- [x] **T4.1** — `levels/level-definitions`: as 3 fases declarativas (enunciado, código inicial, arquivos habilitados, critério de sucesso, dicas).
+- [x] **T4.2** — `engine/validation/level-validator`: valida o resultado por estrutura e semântica, não por texto literal (aceita variações de formatação).
+- [x] **T4.3** — **Fase 1 do jogo**: posicionar `<ball>` e `<ground>` dentro de `<sky>` e colorir os três elementos; conclui ao atingir a cena esperada.
+- [x] **T4.4** — **Fase 2 do jogo**: declarar `@animation jump` e aplicá-la em `ball`; conclui quando a bola pula no preview.
+- [x] **T4.5** — **Fase 3 do jogo**: mover a bola com `A`/`D` e pular com `space`; conclui ao alcançar o objetivo no terreno (ver **Q.6**).
+- [x] **T4.6** — Feedback de conclusão: destaque no preview, botão "Próxima fase" e avanço de rota.
 
 ## Fase 5 — Experiência de apresentação (15 min)
 
-- [ ] **T5.1** — Tela de abertura curta: HTML = estrutura, CSS = aparência, JS = comportamento, com botão "Começar".
-- [ ] **T5.2** — Barra de progresso das 3 fases e navegação livre entre elas, para o apresentador pular etapas.
-- [ ] **T5.3** — Botões "Dica" e "Mostrar solução" por fase — essenciais para a apresentação não travar.
-- [ ] **T5.4** — Botão "Reiniciar fase" restaurando o código inicial.
-- [ ] **T5.5** — Tela final amarrando os três conceitos ao que o aluno acabou de construir.
+- [x] **T5.1** — Tela de abertura curta: HTML = estrutura, CSS = aparência, JS = comportamento, com botão "Começar".
+- [x] **T5.2** — Barra de progresso das 3 fases e navegação livre entre elas, para o apresentador pular etapas.
+- [x] **T5.3** — Botões "Dica" e "Mostrar solução" por fase — essenciais para a apresentação não travar.
+- [x] **T5.4** — Botão "Reiniciar fase" restaurando o código inicial.
+- [x] **T5.5** — Tela final amarrando os três conceitos ao que o aluno acabou de construir.
 
 ## Fase 6 — Qualidade e entrega
 
-- [ ] **T6.1** — Acessibilidade: foco visível, `aria-label` nos controles, contraste do tema validado e descrição textual do preview.
-- [ ] **T6.2** — Persistência do código por fase em `localStorage`, protegendo contra refresh acidental durante a apresentação.
-- [ ] **T6.3** — Revisão de performance: `OnPush` em todos os componentes e nenhum re-render de Angular por frame.
-- [ ] **T6.4** — `README.md` com instruções de execução e o roteiro de 15 minutos da apresentação.
-- [ ] **T6.5** — Testar no navegador, com o app rodando localmente, as três fases de ponta a ponta (exigência do SDD).
-- [ ] **T6.6** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
+- [x] **T6.1** — Acessibilidade: foco visível, `aria-label` nos controles, contraste do tema validado e descrição textual do preview.
+- [x] **T6.2** — Persistência do código por fase em `localStorage`, protegendo contra refresh acidental durante a apresentação.
+- [x] **T6.3** — Revisão de performance: `OnPush` em todos os componentes e nenhum re-render de Angular por frame.
+- [x] **T6.4** — `README.md` com instruções de execução e o roteiro de 15 minutos da apresentação.
+- [x] **T6.5** — Testar no navegador, com o app rodando localmente, as três fases de ponta a ponta (exigência do SDD).
+- [x] **T6.6** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
 
 ---
 
