@@ -1,10 +1,13 @@
 import { SourceCode, SourceFileId } from './source-file';
 import { LevelCheck } from './validation';
 
+/** Ferramenta que a fase ensina — uma fase, uma ferramenta. */
+export type LevelConcept = 'HTML' | 'CSS' | 'JavaScript';
+
 export interface LevelDefinition {
   readonly id: number;
   /** Conceito que a fase apresenta — vira o rotulo da barra de progresso. */
-  readonly concept: 'HTML' | 'CSS' | 'JavaScript';
+  readonly concept: LevelConcept;
   readonly title: string;
   /** Enunciado curto, em uma frase. */
   readonly goal: string;
