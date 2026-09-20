@@ -69,11 +69,18 @@ import { LevelProgress } from './level-progress';
           [label]="'Editor de ' + activeFile()"
           (valueChange)="onCodeChange($event)"
         />
-        <app-problems-panel [diagnostics]="diagnostics()" />
+        <app-problems-panel [diagnostics]="diagnostics()" [hint]="hint()" />
       </ng-container>
 
       <ng-container idePreview>
         <app-goal-panel [level]="level()" [validation]="validation()" />
+
+        <div class="toolbar">
+          <button type="button" class="tool" [disabled]="!hasMoreHints()" (click)="revealHint()">
+            {{ hint() ? 'Outra dica' : 'Dica' }}
+          </button>
+          <button type="button" class="tool" (click)="showSolution()">Mostrar solução</button>
+        </div>
         <div class="stage-wrapper" [class.stage-wrapper--done]="validation().completed">
           <app-game-preview
             appPreviewInput
@@ -109,6 +116,31 @@ import { LevelProgress } from './level-progress';
   styles: `
     .stage-wrapper {
       padding: 0 var(--space-4) var(--space-4);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      padding: 0 var(--space-4) var(--space-3);
+    }
+
+    .tool {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--surface-raised);
+      color: var(--text-primary);
+      font-size: 0.8125rem;
+    }
+
+    .tool:hover:not(:disabled) {
+      border-color: var(--focus-ring);
+    }
+
+    .tool:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
     }
 
     .controls {
@@ -174,6 +206,16 @@ export class SandboxPage implements OnInit {
   );
   protected readonly fileLanguage = computed(
     () => this.files().find((file) => file.id === this.activeFile())?.language ?? 'HTML',
+  );
+
+  /** Dicas sao reveladas uma a uma e zeram a cada fase. */
+  private readonly hintsShown = linkedSignal<number>(() => {
+    this.level();
+    return 0;
+  });
+  protected readonly hint = computed(() => this.level().hints[this.hintsShown() - 1] ?? null);
+  protected readonly hasMoreHints = computed(
+    () => this.hintsShown() < this.level().hints.length,
   );
 
   private readonly html = computed(() => parseHtml(this.code().html));
@@ -247,6 +289,14 @@ export class SandboxPage implements OnInit {
   protected goToNext(): void {
     const next = this.level().id + 1;
     this.router.navigate(next > LAST_LEVEL ? ['/fim'] : ['/sandbox', next]);
+  }
+
+  protected revealHint(): void {
+    this.hintsShown.update((shown) => Math.min(shown + 1, this.level().hints.length));
+  }
+
+  protected showSolution(): void {
+    this.code.set({ ...this.level().solution });
   }
 
   protected onCodeChange(text: string): void {
