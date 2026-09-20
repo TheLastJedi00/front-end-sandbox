@@ -81,7 +81,8 @@ Princípios: `engine/` é puro e testável; `ide/` só apresenta; estado em sign
 - [ ] **T6.2** — Persistência do código por fase em `localStorage`, protegendo contra refresh acidental durante a apresentação.
 - [ ] **T6.3** — Revisão de performance: `OnPush` em todos os componentes e nenhum re-render de Angular por frame.
 - [ ] **T6.4** — `README.md` com instruções de execução e o roteiro de 15 minutos da apresentação.
-- [ ] **T6.5** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
+- [ ] **T6.5** — Testar no navegador, com o app rodando localmente, as três fases de ponta a ponta (exigência do SDD).
+- [ ] **T6.6** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
 
 ---
 
