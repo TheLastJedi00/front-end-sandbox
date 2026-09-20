@@ -150,9 +150,11 @@ export class SandboxPage implements OnInit {
       });
     });
 
-    // Trocar de fase recomeca o jogo do zero.
+    // Trocar de fase ou mexer no codigo recomeca o jogo do zero: o que ja foi
+    // conquistado precisa valer para o codigo que esta na tela agora.
     effect(() => {
       this.level();
+      this.code();
       this.loop.reset();
     });
   }
