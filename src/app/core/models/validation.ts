@@ -1,17 +1,18 @@
 /** Identificadores dos criterios verificaveis das tres fases. */
 export type LevelCheckId =
-  // Fase 1 — estrutura e cor
+  // Fase 1 (HTML) — estrutura: quais elementos existem e quem esta dentro de quem
   | 'sky-exists'
   | 'ball-inside-sky'
   | 'ground-inside-sky'
+  // Fase 2 (CSS) — aparencia: a cor de cada elemento
   | 'sky-blue'
   | 'ball-red'
   | 'ground-green'
-  // Fase 2 — animacao
+  // Fase 2 (CSS) — movimento: a animacao do pulo
   | 'animation-declared'
   | 'animation-applied'
   | 'ball-jumped'
-  // Fase 3 — comportamento
+  // Fase 3 (JavaScript) — comportamento
   | 'move-forward'
   | 'move-backward'
   | 'jump-on-space'

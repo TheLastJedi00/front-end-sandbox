@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -7,6 +8,7 @@ import {
   input,
   linkedSignal,
   numberAttribute,
+  signal,
   OnInit,
 } from '@angular/core';
 import {
@@ -33,6 +35,9 @@ import { TitleBar } from '../../ide/title-bar/title-bar';
 import { findLevel, LAST_LEVEL, LEVELS } from '../../levels/level-definitions';
 import { CodeStorage } from '../../core/services/code-storage';
 import { ProgressStore } from '../../core/services/progress-store';
+import { BriefingStore } from '../../core/services/briefing-store';
+import { SyntaxCards } from '../../ide/syntax-cards/syntax-cards';
+import { ConceptOverlay } from '../../slides/concept-overlay/concept-overlay';
 import { GameStage } from './game-stage';
 import { GoalPanel } from './goal-panel';
 import { LevelProgress } from './level-progress';
@@ -50,10 +55,16 @@ import { LevelProgress } from './level-progress';
     GameStage,
     GoalPanel,
     LevelProgress,
+    ConceptOverlay,
+    SyntaxCards,
   ],
   providers: [GameLoop],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    @if (showConcept()) {
+      <app-concept-overlay [concept]="level().concept" (dismiss)="startLevel()" />
+    }
+
     <app-ide-shell>
       <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'">
         <app-level-progress [current]="level().id" />
@@ -62,12 +73,20 @@ import { LevelProgress } from './level-progress';
 
       <ng-container ideCode>
         <app-file-tabs [files]="files()" [active]="activeFile()" (select)="activeFile.set($event)" />
-        <app-code-editor
-          [value]="code()[activeFile()]"
-          [language]="activeFile()"
-          [label]="'Editor de ' + activeFile()"
-          (valueChange)="onCodeChange($event)"
-        />
+        <div class="editor-area">
+          <app-code-editor
+            [value]="code()[activeFile()]"
+            [language]="activeFile()"
+            [label]="'Editor de ' + activeFile()"
+            [concept]="level().concept"
+            [assistEnabled]="assistEnabled()"
+            [focusRequest]="focusRequest()"
+            (valueChange)="onCodeChange($event)"
+          />
+          @if (showCards()) {
+            <app-syntax-cards [concept]="level().concept" (close)="showCards.set(false)" />
+          }
+        </div>
         <app-problems-panel [diagnostics]="diagnostics()" [hint]="hint()" />
       </ng-container>
 
@@ -78,6 +97,7 @@ import { LevelProgress } from './level-progress';
           <button type="button" class="tool" [disabled]="!hasMoreHints()" (click)="revealHint()">
             {{ hint() ? 'Outra dica' : 'Dica' }}
           </button>
+          <button type="button" class="tool" (click)="showCards.set(true)">Sintaxe</button>
           <button type="button" class="tool" (click)="showSolution()">Mostrar solução</button>
           <button type="button" class="tool" (click)="restart()">Reiniciar fase</button>
         </div>
@@ -111,6 +131,13 @@ import { LevelProgress } from './level-progress';
     </app-ide-shell>
   `,
   styles: `
+    .editor-area {
+      position: relative;
+      display: flex;
+      flex: 1;
+      min-block-size: 0;
+    }
+
     .stage-wrapper {
       padding: 0 var(--space-4) var(--space-4);
     }
@@ -184,6 +211,13 @@ export class SandboxPage implements OnInit {
   private readonly router = inject(Router);
   private readonly progress = inject(ProgressStore);
   private readonly storage = inject(CodeStorage);
+  private readonly briefings = inject(BriefingStore);
+
+  /**
+   * Cada incremento leva o cursor de volta ao editor. Os cards de sintaxe cobrem
+   * a area de codigo, entao sem foco o aluno nao teria como comecar a digitar.
+   */
+  protected readonly focusRequest = signal(0);
   protected readonly loop = inject(GameLoop);
 
   protected readonly level = computed(() => findLevel(this.levelId()) ?? LEVELS[0]);
@@ -195,6 +229,33 @@ export class SandboxPage implements OnInit {
     return this.storage.load(level.id) ?? { ...level.starter };
   });
   protected readonly activeFile = linkedSignal<SourceFileId>(() => this.level().focusFile);
+
+  /**
+   * O slide de conceito abre a fase apenas na primeira vez: numa apresentacao de
+   * 15 minutos, quem volta a uma fase nao pode esperar o slide de novo.
+   */
+  protected readonly showConcept = linkedSignal<boolean>(
+    () => !this.briefings.wasSeen(this.level().id),
+  );
+
+  /**
+   * A sugestao automatica cala a boca quando nao tem mais o que ajudar: fase
+   * concluida ou solucao ja na tela.
+   */
+  private readonly solutionShown = linkedSignal<boolean>(() => {
+    this.level();
+    return false;
+  });
+  protected readonly assistEnabled = computed(
+    // Com os cards de sintaxe na frente ja ha ajuda na tela; a sugestao espera.
+    () => !this.solutionShown() && !this.validation().completed && !this.showCards(),
+  );
+
+  /** Cards de sintaxe: abrem com a fase e saem na primeira tecla digitada. */
+  protected readonly showCards = linkedSignal<boolean>(() => {
+    this.level();
+    return true;
+  });
 
   protected readonly files = computed(() =>
     SOURCE_FILES.filter((file) => this.level().enabledFiles.includes(file.id)),
@@ -253,6 +314,11 @@ export class SandboxPage implements OnInit {
   );
 
   constructor() {
+    // Sem o slide de conceito na frente, a fase ja abre com o cursor no editor.
+    afterNextRender(() => {
+      if (!this.showConcept()) this.askFocus();
+    });
+
     effect(() => {
       const level = this.level();
       this.loop.configure({
@@ -284,6 +350,16 @@ export class SandboxPage implements OnInit {
     this.loop.start();
   }
 
+  protected startLevel(): void {
+    this.briefings.markSeen(this.level().id);
+    this.showConcept.set(false);
+    this.askFocus();
+  }
+
+  private askFocus(): void {
+    this.focusRequest.update((n) => n + 1);
+  }
+
   protected goToNext(): void {
     const next = this.level().id + 1;
     this.router.navigate(next > LAST_LEVEL ? ['/fim'] : ['/sandbox', next]);
@@ -294,6 +370,7 @@ export class SandboxPage implements OnInit {
   }
 
   protected showSolution(): void {
+    this.solutionShown.set(true);
     this.code.set({ ...this.level().solution });
   }
 
@@ -302,10 +379,13 @@ export class SandboxPage implements OnInit {
     this.storage.clear(this.level().id);
     this.code.set({ ...this.level().starter });
     this.hintsShown.set(0);
+    this.solutionShown.set(false);
     this.loop.reset();
   }
 
   protected onCodeChange(text: string): void {
+    // Digitar e o sinal de que os cards ja cumpriram o seu papel.
+    this.showCards.set(false);
     this.code.update((code) => ({ ...code, [this.activeFile()]: text }));
   }
 }
