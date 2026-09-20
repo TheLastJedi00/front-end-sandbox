@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, input, NO_ERRORS_SCHEMA } from '@angular/core';
-import { RenderModel } from '../../engine/runtime/renderer';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  NO_ERRORS_SCHEMA,
+} from '@angular/core';
+import { GameState } from '../../core/models';
+import { toRenderModel } from '../../engine/runtime/renderer';
+import { Scene } from '../../engine/runtime/scene';
 
 /**
  * Desenha a cena com DOM de verdade: o palco contem literalmente os elementos
@@ -125,5 +133,12 @@ import { RenderModel } from '../../engine/runtime/renderer';
   `,
 })
 export class GamePreview {
-  readonly model = input.required<RenderModel>();
+  readonly scene = input.required<Scene>();
+  readonly state = input.required<GameState>();
+  readonly showGoal = input(false);
+
+  /** O modelo e calculado aqui para que so este componente redesenhe a cada quadro. */
+  protected readonly model = computed(() =>
+    toRenderModel(this.scene(), this.state(), { showGoal: this.showGoal() }),
+  );
 }
