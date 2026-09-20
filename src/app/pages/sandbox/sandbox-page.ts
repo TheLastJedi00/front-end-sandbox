@@ -80,6 +80,7 @@ import { LevelProgress } from './level-progress';
             {{ hint() ? 'Outra dica' : 'Dica' }}
           </button>
           <button type="button" class="tool" (click)="showSolution()">Mostrar solução</button>
+          <button type="button" class="tool" (click)="restart()">Reiniciar fase</button>
         </div>
         <div class="stage-wrapper" [class.stage-wrapper--done]="validation().completed">
           <app-game-preview
@@ -297,6 +298,13 @@ export class SandboxPage implements OnInit {
 
   protected showSolution(): void {
     this.code.set({ ...this.level().solution });
+  }
+
+  /** Volta a fase ao ponto de partida — inclusive as dicas ja reveladas. */
+  protected restart(): void {
+    this.code.set({ ...this.level().starter });
+    this.hintsShown.set(0);
+    this.loop.reset();
   }
 
   protected onCodeChange(text: string): void {
