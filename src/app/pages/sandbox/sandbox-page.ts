@@ -33,7 +33,9 @@ import { ProblemsPanel } from '../../ide/problems-panel/problems-panel';
 import { StatusBar } from '../../ide/status-bar/status-bar';
 import { TitleBar } from '../../ide/title-bar/title-bar';
 import { findLevel, LAST_LEVEL, LEVELS } from '../../levels/level-definitions';
+import { ProgressStore } from '../../core/services/progress-store';
 import { GoalPanel } from './goal-panel';
+import { LevelProgress } from './level-progress';
 
 @Component({
   selector: 'app-sandbox-page',
@@ -48,12 +50,15 @@ import { GoalPanel } from './goal-panel';
     GamePreview,
     PreviewInput,
     GoalPanel,
+    LevelProgress,
   ],
   providers: [GameLoop],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-ide-shell>
-      <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'" />
+      <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'">
+        <app-level-progress [current]="level().id" />
+      </app-title-bar>
       <app-activity-bar ideActivityBar />
 
       <ng-container ideCode>
@@ -154,6 +159,7 @@ export class SandboxPage implements OnInit {
   readonly levelId = input.required({ transform: numberAttribute });
 
   private readonly router = inject(Router);
+  private readonly progress = inject(ProgressStore);
   protected readonly loop = inject(GameLoop);
 
   protected readonly level = computed(() => findLevel(this.levelId()) ?? LEVELS[0]);
@@ -218,6 +224,11 @@ export class SandboxPage implements OnInit {
         interactive: level.interactive,
         autoJump: !level.interactive,
       });
+    });
+
+    // A fase concluida fica marcada na trilha, mesmo se o aluno voltar atras.
+    effect(() => {
+      if (this.validation().completed) this.progress.markCompleted(this.level().id);
     });
 
     // Trocar de fase ou mexer no codigo recomeca o jogo do zero: o que ja foi
