@@ -16,6 +16,7 @@ import {
   SourceCode,
   SourceFileId,
 } from '../../core/models';
+import { Router } from '@angular/router';
 import { GameLoop } from '../../engine/runtime/game-loop';
 import { buildScene } from '../../engine/runtime/scene';
 import { parseCss } from '../../engine/parsers/css-parser';
@@ -31,7 +32,7 @@ import { IdeShell } from '../../ide/ide-shell/ide-shell';
 import { ProblemsPanel } from '../../ide/problems-panel/problems-panel';
 import { StatusBar } from '../../ide/status-bar/status-bar';
 import { TitleBar } from '../../ide/title-bar/title-bar';
-import { findLevel, LEVELS } from '../../levels/level-definitions';
+import { findLevel, LAST_LEVEL, LEVELS } from '../../levels/level-definitions';
 import { GoalPanel } from './goal-panel';
 
 @Component({
@@ -68,7 +69,7 @@ import { GoalPanel } from './goal-panel';
 
       <ng-container idePreview>
         <app-goal-panel [level]="level()" [validation]="validation()" />
-        <div class="stage-wrapper">
+        <div class="stage-wrapper" [class.stage-wrapper--done]="validation().completed">
           <app-game-preview
             appPreviewInput
             [keys]="loop.keys"
@@ -82,6 +83,15 @@ import { GoalPanel } from './goal-panel';
               Clique no palco e use <kbd>A</kbd> <kbd>D</kbd> para andar e
               <kbd>espaço</kbd> para pular.
             </p>
+          }
+
+          @if (validation().completed) {
+            <div class="done" role="status">
+              <strong>Fase concluída!</strong>
+              <button type="button" class="next" (click)="goToNext()">
+                {{ isLast() ? 'Ver o resultado' : 'Próxima fase' }}
+              </button>
+            </div>
           }
         </div>
       </ng-container>
@@ -102,6 +112,34 @@ import { GoalPanel } from './goal-panel';
       font-size: 0.8125rem;
     }
 
+    .stage-wrapper--done app-game-preview {
+      display: block;
+      border-radius: var(--radius-md);
+      outline: 2px solid var(--state-success);
+      outline-offset: 3px;
+    }
+
+    .done {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      margin-block-start: var(--space-4);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--state-success) 16%, var(--surface-raised));
+      color: var(--text-primary);
+    }
+
+    .next {
+      padding: var(--space-2) var(--space-4);
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--surface-status);
+      color: var(--text-inverse);
+      font-weight: 600;
+    }
+
     kbd {
       padding: 0.05rem 0.35rem;
       border: 1px solid var(--border-strong);
@@ -115,9 +153,11 @@ import { GoalPanel } from './goal-panel';
 export class SandboxPage implements OnInit {
   readonly levelId = input.required({ transform: numberAttribute });
 
+  private readonly router = inject(Router);
   protected readonly loop = inject(GameLoop);
 
   protected readonly level = computed(() => findLevel(this.levelId()) ?? LEVELS[0]);
+  protected readonly isLast = computed(() => this.level().id === LAST_LEVEL);
 
   /** O codigo volta ao inicial da fase sempre que a rota muda de fase. */
   protected readonly code = linkedSignal<SourceCode>(() => ({ ...this.level().starter }));
@@ -191,6 +231,11 @@ export class SandboxPage implements OnInit {
 
   ngOnInit(): void {
     this.loop.start();
+  }
+
+  protected goToNext(): void {
+    const next = this.level().id + 1;
+    this.router.navigate(next > LAST_LEVEL ? ['/fim'] : ['/sandbox', next]);
   }
 
   protected onCodeChange(text: string): void {
