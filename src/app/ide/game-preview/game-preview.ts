@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { GameState } from '../../core/models';
 import { toRenderModel } from '../../engine/runtime/renderer';
-import { Scene } from '../../engine/runtime/scene';
+import { describeScene, Scene } from '../../engine/runtime/scene';
 
 /**
  * Desenha a cena com DOM de verdade: o palco contem literalmente os elementos
@@ -24,6 +24,7 @@ import { Scene } from '../../engine/runtime/scene';
   schemas: [NO_ERRORS_SCHEMA],
   host: { class: 'game-preview' },
   template: `
+    <p class="sr-only" role="status">{{ description() }}</p>
     <div class="stage">
       @if (model().skyColor !== 'transparent') {
         <sky [style.background]="model().skyColor">
@@ -62,6 +63,16 @@ import { Scene } from '../../engine/runtime/scene';
     :host {
       display: block;
       container-type: inline-size;
+    }
+
+    .sr-only {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      margin: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
 
     .stage {
@@ -141,4 +152,7 @@ export class GamePreview {
   protected readonly model = computed(() =>
     toRenderModel(this.scene(), this.state(), { showGoal: this.showGoal() }),
   );
+
+  /** Texto equivalente a imagem, anunciado quando a cena muda. */
+  protected readonly description = computed(() => describeScene(this.scene()));
 }

@@ -86,3 +86,22 @@ export const EMPTY_SCENE: Scene = {
   ballAnimation: null,
   animation: null,
 };
+
+/**
+ * Descricao em texto da cena, para quem usa leitor de tela — e util tambem
+ * para conferir, em voz alta, o que mudou depois de uma edicao.
+ */
+export function describeScene(scene: Scene): string {
+  if (!scene.sky.visible) return 'O palco está vazio: ainda não existe um céu.';
+
+  const partes: string[] = [`Céu ${colorWord(scene.sky.colorName)}`];
+  if (scene.ground.visible) partes.push(`terreno ${colorWord(scene.ground.colorName)}`);
+  if (scene.ball.visible) partes.push(`bola ${colorWord(scene.ball.colorName)}`);
+  if (scene.animation) partes.push(`a bola tem a animação ${scene.animation.name}`);
+
+  return `${partes.join(', ')}.`;
+}
+
+function colorWord(name: string | null): string {
+  return name ? `da cor ${name}` : 'sem cor definida';
+}
