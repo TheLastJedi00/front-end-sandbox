@@ -33,6 +33,7 @@ import { ProblemsPanel } from '../../ide/problems-panel/problems-panel';
 import { StatusBar } from '../../ide/status-bar/status-bar';
 import { TitleBar } from '../../ide/title-bar/title-bar';
 import { findLevel, LAST_LEVEL, LEVELS } from '../../levels/level-definitions';
+import { CodeStorage } from '../../core/services/code-storage';
 import { ProgressStore } from '../../core/services/progress-store';
 import { GoalPanel } from './goal-panel';
 import { LevelProgress } from './level-progress';
@@ -193,13 +194,17 @@ export class SandboxPage implements OnInit {
 
   private readonly router = inject(Router);
   private readonly progress = inject(ProgressStore);
+  private readonly storage = inject(CodeStorage);
   protected readonly loop = inject(GameLoop);
 
   protected readonly level = computed(() => findLevel(this.levelId()) ?? LEVELS[0]);
   protected readonly isLast = computed(() => this.level().id === LAST_LEVEL);
 
-  /** O codigo volta ao inicial da fase sempre que a rota muda de fase. */
-  protected readonly code = linkedSignal<SourceCode>(() => ({ ...this.level().starter }));
+  /** Ao trocar de fase, recupera o rascunho salvo ou volta ao codigo inicial. */
+  protected readonly code = linkedSignal<SourceCode>(() => {
+    const level = this.level();
+    return this.storage.load(level.id) ?? { ...level.starter };
+  });
   protected readonly activeFile = linkedSignal<SourceFileId>(() => this.level().focusFile);
 
   protected readonly files = computed(() =>
@@ -269,6 +274,9 @@ export class SandboxPage implements OnInit {
       });
     });
 
+    // Cada mudanca no codigo e guardada: um F5 no meio da aula nao apaga nada.
+    effect(() => this.storage.save(this.level().id, this.code()));
+
     // A fase concluida fica marcada na trilha, mesmo se o aluno voltar atras.
     effect(() => {
       if (this.validation().completed) this.progress.markCompleted(this.level().id);
@@ -302,6 +310,7 @@ export class SandboxPage implements OnInit {
 
   /** Volta a fase ao ponto de partida — inclusive as dicas ja reveladas. */
   protected restart(): void {
+    this.storage.clear(this.level().id);
     this.code.set({ ...this.level().starter });
     this.hintsShown.set(0);
     this.loop.reset();
