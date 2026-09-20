@@ -26,8 +26,6 @@ import { validateLevel } from '../../engine/validation/level-validator';
 import { ActivityBar } from '../../ide/activity-bar/activity-bar';
 import { CodeEditor } from '../../ide/code-editor/code-editor';
 import { FileTabs } from '../../ide/file-tabs/file-tabs';
-import { GamePreview } from '../../ide/game-preview/game-preview';
-import { PreviewInput } from '../../ide/game-preview/preview-input';
 import { IdeShell } from '../../ide/ide-shell/ide-shell';
 import { ProblemsPanel } from '../../ide/problems-panel/problems-panel';
 import { StatusBar } from '../../ide/status-bar/status-bar';
@@ -35,6 +33,7 @@ import { TitleBar } from '../../ide/title-bar/title-bar';
 import { findLevel, LAST_LEVEL, LEVELS } from '../../levels/level-definitions';
 import { CodeStorage } from '../../core/services/code-storage';
 import { ProgressStore } from '../../core/services/progress-store';
+import { GameStage } from './game-stage';
 import { GoalPanel } from './goal-panel';
 import { LevelProgress } from './level-progress';
 
@@ -48,8 +47,7 @@ import { LevelProgress } from './level-progress';
     FileTabs,
     CodeEditor,
     ProblemsPanel,
-    GamePreview,
-    PreviewInput,
+    GameStage,
     GoalPanel,
     LevelProgress,
   ],
@@ -84,14 +82,7 @@ import { LevelProgress } from './level-progress';
           <button type="button" class="tool" (click)="restart()">Reiniciar fase</button>
         </div>
         <div class="stage-wrapper" [class.stage-wrapper--done]="validation().completed">
-          <app-game-preview
-            appPreviewInput
-            [keys]="loop.keys"
-            [enabled]="level().interactive"
-            [showGoal]="level().interactive"
-            [scene]="scene()"
-            [state]="loop.state()"
-          />
+          <app-game-stage [scene]="scene()" [interactive]="level().interactive" />
           @if (level().interactive) {
             <p class="controls">
               Clique no palco e use <kbd>A</kbd> <kbd>D</kbd> para andar e
@@ -151,7 +142,7 @@ import { LevelProgress } from './level-progress';
       font-size: 0.8125rem;
     }
 
-    .stage-wrapper--done app-game-preview {
+    .stage-wrapper--done app-game-stage {
       display: block;
       border-radius: var(--radius-md);
       outline: 2px solid var(--state-success);
