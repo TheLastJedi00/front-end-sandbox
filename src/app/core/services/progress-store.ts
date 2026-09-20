@@ -1,7 +1,10 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { injectIsBrowser } from '../platform/browser';
 
-const KEY = 'sandbox-front-end:progresso';
+// Versionada junto com o codigo: com as fases redivididas, um progresso antigo
+// nao corresponde as fases atuais. E uma apresentacao, nao tem historico a
+// preservar.
+const KEY = 'sandbox-front-end:v2:progresso';
 
 /**
  * Quais fases ja foram concluidas. Fica guardado no navegador pelo mesmo motivo

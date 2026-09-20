@@ -2,7 +2,9 @@ import { Injectable } from '@angular/core';
 import { SourceCode } from '../models';
 import { injectIsBrowser } from '../platform/browser';
 
-const PREFIX = 'sandbox-front-end:level:';
+// A chave carrega a versao do formato das fases: quando a divisao das fases
+// muda, o rascunho antigo deixa de fazer sentido e e simplesmente ignorado.
+const PREFIX = 'sandbox-front-end:v2:level:';
 
 /**
  * Guarda o codigo de cada fase no navegador. Serve para um caso bem concreto:
