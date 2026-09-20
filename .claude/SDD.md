@@ -13,3 +13,7 @@
 - Caso a questão envolva arquitetura, faturamento ou afete negativamente performance e aumente de mais consultas a bancos de dados, pergunte e aguarde decisão
 - testar no navegador rodando localmente a feature implementada para aprovar comportamento
 - Documentar resultados no README.md
+### 3. Context
+- Avalie a intenção
+- revise os context.md anteriores
+- Ajude a intenção a se tornar um context.md claro e bem estruturado
