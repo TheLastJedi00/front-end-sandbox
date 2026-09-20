@@ -27,44 +27,41 @@ describe('validateLevel', () => {
   it('aceita formatacao diferente da solucao', () => {
     const result = validate(
       1,
-      {
-        html: '<sky><ground></ground><ball></ball></sky>',
-        css: 'ground{color:green}ball{color:red}sky{color:blue}',
-        js: '',
-      },
+      { html: '<sky><ground></ground><ball></ball></sky>', css: '', js: '' },
       INITIAL_GAME_STATE,
     );
 
     expect(result.completed).toBeTrue();
   });
 
-  it('nao conclui a fase 1 com a cor errada', () => {
-    const result = validate(
-      1,
-      {
-        html: '<sky><ball></ball><ground></ground></sky>',
-        css: 'sky { color: blue } ball { color: pink } ground { color: green }',
-        js: '',
-      },
-      INITIAL_GAME_STATE,
-    );
+  it('conclui a fase 1 sem nenhum CSS, porque cor nao e assunto dela', () => {
+    const level = findLevel(1)!;
+    const result = validate(1, { html: level.solution.html, css: '', js: '' }, INITIAL_GAME_STATE);
 
-    expect(result.completed).toBeFalse();
-    expect(result.checks.find((check) => check.id === 'ball-red')!.done).toBeFalse();
+    expect(result.completed).toBeTrue();
+    expect(result.checks.map((check) => check.id)).not.toContain('ball-red');
   });
 
   it('nao conclui a fase 1 com a bola fora do ceu', () => {
     const result = validate(
       1,
-      {
-        html: '<ball></ball><sky><ground></ground></sky>',
-        css: 'sky { color: blue } ball { color: red } ground { color: green }',
-        js: '',
-      },
+      { html: '<ball></ball><sky><ground></ground></sky>', css: '', js: '' },
       INITIAL_GAME_STATE,
     );
 
     expect(result.checks.find((check) => check.id === 'ball-inside-sky')!.done).toBeFalse();
+  });
+
+  it('nao conclui a fase 2 com a cor errada', () => {
+    const level = findLevel(2)!;
+    const result = validate(
+      2,
+      { ...level.solution, css: level.solution.css.replace('color: red', 'color: pink') },
+      { ...INITIAL_GAME_STATE, hasJumped: true },
+    );
+
+    expect(result.completed).toBeFalse();
+    expect(result.checks.find((check) => check.id === 'ball-red')!.done).toBeFalse();
   });
 
   it('so conclui a fase 2 depois de a bola pular de fato', () => {
