@@ -33,6 +33,8 @@ import { TitleBar } from '../../ide/title-bar/title-bar';
 import { findLevel, LAST_LEVEL, LEVELS } from '../../levels/level-definitions';
 import { CodeStorage } from '../../core/services/code-storage';
 import { ProgressStore } from '../../core/services/progress-store';
+import { BriefingStore } from '../../core/services/briefing-store';
+import { ConceptOverlay } from '../../slides/concept-overlay/concept-overlay';
 import { GameStage } from './game-stage';
 import { GoalPanel } from './goal-panel';
 import { LevelProgress } from './level-progress';
@@ -184,6 +186,7 @@ export class SandboxPage implements OnInit {
   private readonly router = inject(Router);
   private readonly progress = inject(ProgressStore);
   private readonly storage = inject(CodeStorage);
+  private readonly briefings = inject(BriefingStore);
   protected readonly loop = inject(GameLoop);
 
   protected readonly level = computed(() => findLevel(this.levelId()) ?? LEVELS[0]);
@@ -195,6 +198,14 @@ export class SandboxPage implements OnInit {
     return this.storage.load(level.id) ?? { ...level.starter };
   });
   protected readonly activeFile = linkedSignal<SourceFileId>(() => this.level().focusFile);
+
+  /**
+   * O slide de conceito abre a fase apenas na primeira vez: numa apresentacao de
+   * 15 minutos, quem volta a uma fase nao pode esperar o slide de novo.
+   */
+  protected readonly showConcept = linkedSignal<boolean>(
+    () => !this.briefings.wasSeen(this.level().id),
+  );
 
   protected readonly files = computed(() =>
     SOURCE_FILES.filter((file) => this.level().enabledFiles.includes(file.id)),
@@ -282,6 +293,11 @@ export class SandboxPage implements OnInit {
 
   ngOnInit(): void {
     this.loop.start();
+  }
+
+  protected startLevel(): void {
+    this.briefings.markSeen(this.level().id);
+    this.showConcept.set(false);
   }
 
   protected goToNext(): void {
