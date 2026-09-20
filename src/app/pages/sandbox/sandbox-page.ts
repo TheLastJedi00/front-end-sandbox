@@ -76,6 +76,8 @@ import { LevelProgress } from './level-progress';
             [value]="code()[activeFile()]"
             [language]="activeFile()"
             [label]="'Editor de ' + activeFile()"
+            [concept]="level().concept"
+            [assistEnabled]="assistEnabled()"
             (valueChange)="onCodeChange($event)"
           />
           @if (showCards()) {
@@ -227,6 +229,18 @@ export class SandboxPage implements OnInit {
     () => !this.briefings.wasSeen(this.level().id),
   );
 
+  /**
+   * A sugestao automatica cala a boca quando nao tem mais o que ajudar: fase
+   * concluida ou solucao ja na tela.
+   */
+  private readonly solutionShown = linkedSignal<boolean>(() => {
+    this.level();
+    return false;
+  });
+  protected readonly assistEnabled = computed(
+    () => !this.solutionShown() && !this.validation().completed,
+  );
+
   /** Cards de sintaxe: abrem com a fase e saem na primeira tecla digitada. */
   protected readonly showCards = linkedSignal<boolean>(() => {
     this.level();
@@ -336,6 +350,7 @@ export class SandboxPage implements OnInit {
   }
 
   protected showSolution(): void {
+    this.solutionShown.set(true);
     this.code.set({ ...this.level().solution });
   }
 
@@ -344,6 +359,7 @@ export class SandboxPage implements OnInit {
     this.storage.clear(this.level().id);
     this.code.set({ ...this.level().starter });
     this.hintsShown.set(0);
+    this.solutionShown.set(false);
     this.loop.reset();
   }
 

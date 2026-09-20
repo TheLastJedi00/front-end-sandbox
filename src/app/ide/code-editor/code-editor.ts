@@ -17,10 +17,13 @@ import {
   Completion,
   completionsAt,
 } from '../../assist/completion';
-import { SourceFileId } from '../../core/models';
+import { ghostSuggestion, GhostSuggestion } from '../../assist/ghost-suggestion';
+import { LevelConcept, SourceFileId } from '../../core/models';
 import { highlight } from './highlight';
 
 const DEBOUNCE_MS = 150;
+/** Tempo parado antes de a IDE oferecer o proximo trecho de codigo. */
+const IDLE_MS = 5000;
 /** Altura reservada para a lista de sugestoes ao decidir se ela abre para cima. */
 const LIST_HEIGHT = 220;
 /** Quantas sugestoes aparecem de uma vez — a lista e um apoio, nao um menu. */
@@ -67,10 +70,26 @@ interface CaretPoint {
         (keydown)="onKeydown($event)"
         (keyup)="syncCaret()"
         (click)="syncCaret()"
+        (focus)="scheduleGhost()"
         (blur)="closeList()"
         (scroll)="onScroll($event)"
         #input
       ></textarea>
+
+      @if (ghost(); as suggestion) {
+        <div class="ghost" aria-hidden="true" [style.left.px]="caret().x" [style.top.px]="ghostTop()">
+          <span class="ghost-text">{{ suggestion.insert }}</span>
+        </div>
+        <div class="ghost-actions" [style.top.px]="ghostTop()">
+          <button class="ghost-accept" type="button" (pointerdown)="acceptGhost($event)">
+            Aceitar sugestão: {{ suggestion.summary }}
+            <kbd>Tab</kbd>
+          </button>
+          <button class="ghost-dismiss" type="button" (pointerdown)="dismissGhost($event)">
+            Descartar
+          </button>
+        </div>
+      }
 
       @if (isListOpen()) {
         <ul
@@ -177,6 +196,49 @@ interface CaretPoint {
       visibility: hidden;
       white-space: pre;
       pointer-events: none;
+    }
+
+    /* Texto fantasma: mesma metrica do editor, so mais apagado. */
+    .ghost {
+      position: absolute;
+      z-index: 4;
+      color: var(--text-dim);
+      font: inherit;
+      white-space: pre;
+      pointer-events: none;
+    }
+
+    .ghost-text {
+      opacity: 0.75;
+    }
+
+    .ghost-actions {
+      position: absolute;
+      inset-inline-end: var(--space-4);
+      z-index: 6;
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .ghost-accept,
+    .ghost-dismiss {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-3);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--surface-raised);
+      font-family: var(--font-ui);
+      font-size: 0.75rem;
+    }
+
+    .ghost-accept {
+      border-color: var(--focus-ring);
+    }
+
+    .ghost-dismiss {
+      color: var(--text-muted);
     }
 
     .suggestions {
@@ -297,6 +359,10 @@ export class CodeEditor implements OnDestroy {
   readonly value = input.required<string>();
   readonly language = input.required<SourceFileId>();
   readonly label = input('Editor de código');
+  /** Ferramenta da fase — define o que a sugestao automatica pode oferecer. */
+  readonly concept = input.required<LevelConcept>();
+  /** Desliga a sugestao automatica (fase concluida, solucao na tela). */
+  readonly assistEnabled = input(true);
   readonly valueChange = output<string>();
 
   protected readonly draft = signal('');
@@ -335,13 +401,25 @@ export class CodeEditor implements OnDestroy {
     return y + LIST_HEIGHT > area && y > LIST_HEIGHT / 2;
   });
 
+  /** O fantasma comeca na linha do cursor, nao na linha de baixo. */
+  protected readonly ghostTop = computed(() => {
+    const { y, lineHeight } = this.caret();
+    return y - lineHeight;
+  });
+
   protected readonly bottomOffset = computed(() => {
     const { y, lineHeight } = this.caret();
     const area = this.input().nativeElement.clientHeight;
     return Math.max(area - y + lineHeight, 0);
   });
 
+  /** Sugestao de bloco depois de 5 segundos parado; null quando nao ha nenhuma. */
+  protected readonly ghost = signal<GhostSuggestion | null>(null);
+
   protected readonly liveMessage = computed(() => {
+    const ghost = this.ghost();
+    if (ghost) return `Sugestão: ${ghost.summary}. Tab aceita, Esc descarta.`;
+
     const suggestions = this.suggestions();
     if (!this.isListOpen()) return '';
 
@@ -354,6 +432,7 @@ export class CodeEditor implements OnDestroy {
   private readonly probe = viewChild.required<ElementRef<HTMLElement>>('probe');
   private readonly input = viewChild.required<ElementRef<HTMLTextAreaElement>>('input');
   private timer?: ReturnType<typeof setTimeout>;
+  private idleTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
     // Reflete mudancas vindas de fora (reiniciar fase, mostrar solucao, troca de
@@ -370,6 +449,7 @@ export class CodeEditor implements OnDestroy {
 
   ngOnDestroy(): void {
     clearTimeout(this.timer);
+    clearTimeout(this.idleTimer);
   }
 
   protected onInput(event: Event): void {
@@ -389,6 +469,23 @@ export class CodeEditor implements OnDestroy {
   }
 
   protected onKeydown(event: KeyboardEvent): void {
+    const ghost = this.ghost();
+
+    if (ghost && event.key === 'Tab') {
+      event.preventDefault();
+      this.acceptGhost();
+      return;
+    }
+
+    if (ghost && event.key === 'Escape') {
+      event.preventDefault();
+      this.dismissGhost();
+      return;
+    }
+
+    // Qualquer outra tecla recomeca a contagem dos 5 segundos.
+    this.scheduleGhost();
+
     if (!this.isListOpen()) return;
 
     const suggestions = this.suggestions();
@@ -433,6 +530,52 @@ export class CodeEditor implements OnDestroy {
     this.activeIndex.set(0);
   }
 
+  /** Aceita o bloco sugerido na posicao do cursor. */
+  protected acceptGhost(event?: Event): void {
+    event?.preventDefault();
+
+    const suggestion = this.ghost();
+    if (!suggestion) return;
+
+    const text = this.draft();
+    const caret = this.caretIndex();
+    this.ghost.set(null);
+    this.write(text.slice(0, caret) + suggestion.insert + text.slice(caret), caret + suggestion.insert.length);
+    this.closeList();
+  }
+
+  protected dismissGhost(event?: Event): void {
+    event?.preventDefault();
+    clearTimeout(this.idleTimer);
+    this.ghost.set(null);
+  }
+
+  /**
+   * Reinicia a contagem de inatividade. So depois de 5 segundos parado a IDE
+   * oferece o proximo trecho — antes disso ela nao interrompe quem esta pensando.
+   */
+  protected scheduleGhost(): void {
+    clearTimeout(this.idleTimer);
+    this.ghost.set(null);
+    if (!this.assistEnabled()) return;
+
+    this.idleTimer = setTimeout(() => this.offerGhost(), IDLE_MS);
+  }
+
+  private offerGhost(): void {
+    // Com a lista de sugestoes aberta ja ha uma ajuda na tela; duas atrapalham.
+    if (!this.assistEnabled() || this.isListOpen()) return;
+
+    this.ghost.set(
+      ghostSuggestion({
+        text: this.draft(),
+        caret: this.caretIndex(),
+        file: this.language(),
+        concept: this.concept(),
+      }),
+    );
+  }
+
   protected syncCaret(): void {
     this.caretIndex.set(this.input().nativeElement.selectionStart);
   }
@@ -459,6 +602,7 @@ export class CodeEditor implements OnDestroy {
 
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.valueChange.emit(text), DEBOUNCE_MS);
+    this.scheduleGhost();
   }
 
   /**
