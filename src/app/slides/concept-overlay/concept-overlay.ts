@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import { LevelConcept } from '../../core/models';
 import { conceptSlide } from '../slide-definitions';
 import { Slide } from '../slide/slide';
@@ -23,7 +32,7 @@ import { Slide } from '../slide/slide';
       <app-slide [slide]="slide()" />
 
       <footer class="actions">
-        <button class="action action--primary" type="button" (click)="dismiss.emit()">
+        <button class="action action--primary" type="button" (click)="dismiss.emit()" #start>
           Começar a escrever <span aria-hidden="true">→</span>
         </button>
         <button class="action" type="button" (click)="dismiss.emit()">Pular</button>
@@ -86,6 +95,14 @@ export class ConceptOverlay {
   readonly dismiss = output<void>();
 
   protected readonly slide = computed(() => conceptSlide(this.concept()));
+
+  private readonly start = viewChild.required<ElementRef<HTMLButtonElement>>('start');
+
+  constructor() {
+    // O foco entra no dialogo: quem usa teclado nao pode ficar navegando a IDE
+    // que esta atras do slide.
+    afterNextRender(() => this.start().nativeElement.focus());
+  }
 
   protected onKeydown(event: KeyboardEvent): void {
     if (event.key !== 'Escape' && event.key !== 'Enter' && event.key !== ' ') return;

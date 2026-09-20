@@ -68,6 +68,8 @@ interface CaretPoint {
         wrap="off"
         [attr.aria-label]="label()"
         [attr.aria-expanded]="isListOpen()"
+        [attr.aria-controls]="isListOpen() ? 'sugestoes' : null"
+        [attr.aria-activedescendant]="activeOptionId()"
         [value]="draft()"
         (input)="onInput($event)"
         (keydown)="onKeydown($event)"
@@ -97,6 +99,7 @@ interface CaretPoint {
       @if (isListOpen()) {
         <ul
           class="suggestions"
+          id="sugestoes"
           role="listbox"
           [attr.aria-label]="'Sugestões para ' + language()"
           [style.left.px]="caret().x"
@@ -109,6 +112,7 @@ interface CaretPoint {
                 class="suggestion"
                 type="button"
                 role="option"
+                [id]="'sugestao-' + i"
                 [class.suggestion--active]="i === activeIndex()"
                 [attr.aria-selected]="i === activeIndex()"
                 (pointerdown)="accept(suggestion, $event)"
@@ -424,6 +428,11 @@ export class CodeEditor implements OnDestroy {
 
   /** Sugestao de bloco depois de 5 segundos parado; null quando nao ha nenhuma. */
   protected readonly ghost = signal<GhostSuggestion | null>(null);
+
+  /** Opcao em foco, para o leitor de tela acompanhar as setas. */
+  protected readonly activeOptionId = computed(() =>
+    this.isListOpen() ? `sugestao-${this.activeIndex()}` : null,
+  );
 
   protected readonly liveMessage = computed(() => {
     const ghost = this.ghost();
