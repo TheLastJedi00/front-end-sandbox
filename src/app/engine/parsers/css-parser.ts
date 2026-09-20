@@ -2,6 +2,11 @@ import { Diagnostic, diagnostic } from '../../core/models';
 
 /** Propriedades que o jogo entende dentro de um seletor. */
 export const ALLOWED_PROPERTIES = ['color', 'animation'] as const;
+/** Propriedade unica aceita dentro de um passo de animacao. */
+export const KEYFRAME_PROPERTY = 'position';
+/** Os tres momentos da animacao, na ordem em que acontecem. */
+export const KEYFRAME_STEPS = ['inicio', 'meio', 'fim'] as const;
+export type KeyframeStep = (typeof KEYFRAME_STEPS)[number];
 
 export interface CssRule {
   readonly selector: string;
@@ -9,39 +14,50 @@ export interface CssRule {
   readonly declarations: Readonly<Record<string, string>>;
 }
 
+export interface Keyframe {
+  readonly step: KeyframeStep;
+  readonly position: number;
+  readonly line: number;
+}
+
+export interface CssAnimation {
+  readonly name: string;
+  readonly line: number;
+  readonly keyframes: readonly Keyframe[];
+}
+
 export interface CssParseResult {
   readonly rules: readonly CssRule[];
+  readonly animations: readonly CssAnimation[];
   readonly diagnostics: readonly Diagnostic[];
 }
+
+type Report = (line: number, message: string, severity?: 'erro' | 'aviso') => void;
 
 interface Block {
   readonly header: string;
   readonly headerLine: number;
   readonly body: string;
-  readonly bodyStart: number;
+  /** Linha, no arquivo inteiro, em que o corpo do bloco comeca. */
+  readonly bodyLine: number;
 }
 
-function lineAt(source: string, index: number): number {
-  let line = 1;
-  for (let i = 0; i < index && i < source.length; i++) {
-    if (source[i] === '\n') line++;
+function countLines(text: string, until: number): number {
+  let lines = 0;
+  for (let i = 0; i < until && i < text.length; i++) {
+    if (text[i] === '\n') lines++;
   }
-  return line;
+  return lines;
 }
 
 function stripComments(source: string): string {
-  // Mantem o tamanho original trocando o comentario por espacos, para que as
-  // linhas relatadas continuem batendo com o que o aluno ve na tela.
-  return source.replace(/\/\*[\s\S]*?(\*\/|$)/g, (found) =>
-    found.replace(/[^\n]/g, ' '),
-  );
+  // Troca o comentario por espacos em vez de remove-lo, para que as linhas
+  // relatadas continuem batendo com o que o aluno ve na tela.
+  return source.replace(/\/\*[\s\S]*?(\*\/|$)/g, (found) => found.replace(/[^\n]/g, ' '));
 }
 
 /** Quebra o texto em blocos `cabecalho { corpo }`, respeitando aninhamento. */
-export function splitBlocks(
-  source: string,
-  report: (line: number, message: string) => void,
-): Block[] {
+function splitBlocks(source: string, baseLine: number, report: Report): Block[] {
   const blocks: Block[] = [];
   let header = '';
   let headerStart = 0;
@@ -57,16 +73,19 @@ export function splitBlocks(
         if (source[end] === '}') depth--;
         end++;
       }
-      if (depth > 0) {
-        report(lineAt(source, i), 'Faltou fechar este bloco com "}".');
+      const unbalanced = depth > 0;
+      if (unbalanced) {
+        report(baseLine + countLines(source, i), 'Faltou fechar este bloco com "}".');
       }
-      const bodyEnd = depth > 0 ? source.length : end - 1;
+      const bodyEnd = unbalanced ? source.length : end - 1;
+
       blocks.push({
         header: header.trim(),
-        headerLine: lineAt(source, headerStart + (header.length - header.trimStart().length)),
+        headerLine: baseLine + countLines(source, headerStart),
         body: source.slice(i + 1, bodyEnd),
-        bodyStart: i + 1,
+        bodyLine: baseLine + countLines(source, i + 1),
       });
+
       i = bodyEnd;
       header = '';
       headerStart = i + 1;
@@ -74,7 +93,7 @@ export function splitBlocks(
     }
 
     if (char === '}') {
-      report(lineAt(source, i), 'Apareceu um "}" sem um "{" correspondente.');
+      report(baseLine + countLines(source, i), 'Apareceu um "}" sem um "{" correspondente.');
       header = '';
       headerStart = i + 1;
       continue;
@@ -88,30 +107,31 @@ export function splitBlocks(
   }
 
   if (header.trim()) {
-    report(lineAt(source, headerStart), `Faltou abrir o bloco de "${header.trim()}" com "{".`);
+    report(
+      baseLine + countLines(source, headerStart),
+      `Faltou abrir o bloco de "${header.trim()}" com "{".`,
+    );
   }
 
   return blocks;
 }
 
 /** Le as declaracoes `propriedade: valor` de dentro de um bloco. */
-export function parseDeclarations(
+function parseDeclarations(
   block: Block,
-  source: string,
   allowed: readonly string[],
-  report: (line: number, message: string, severity?: 'erro' | 'aviso') => void,
+  report: Report,
 ): Record<string, string> {
   const declarations: Record<string, string> = {};
+  let consumed = 0;
 
-  let offset = 0;
   for (const piece of block.body.split(/[;\n]/)) {
-    const absolute = block.bodyStart + offset;
-    offset += piece.length + 1;
+    const line = block.bodyLine + countLines(block.body, consumed);
+    consumed += piece.length + 1;
 
     const text = piece.trim();
     if (!text || text.includes('{') || text.includes('}')) continue;
 
-    const line = lineAt(source, absolute + (piece.length - piece.trimStart().length));
     const colon = text.indexOf(':');
     if (colon === -1) {
       report(line, `Faltaram os dois-pontos em "${text}". Escreva assim: color: red`);
@@ -140,18 +160,70 @@ export function parseDeclarations(
   return declarations;
 }
 
-/** Le a aparencia declarada pelo aluno. */
+function parseAnimation(block: Block, report: Report): CssAnimation | null {
+  const name = block.header.replace(/^@animation/i, '').trim().toLowerCase();
+  if (!name) {
+    report(block.headerLine, 'A animação precisa de um nome. Exemplo: @animation jump { ... }');
+    return null;
+  }
+
+  const keyframes: Keyframe[] = [];
+  for (const step of splitBlocks(block.body, block.bodyLine, report)) {
+    const at = step.header.toLowerCase();
+    if (!(KEYFRAME_STEPS as readonly string[]).includes(at)) {
+      report(
+        step.headerLine,
+        `"${step.header}" não é um momento da animação. Use ${KEYFRAME_STEPS.join(', ')}.`,
+      );
+      continue;
+    }
+
+    const declarations = parseDeclarations(step, [KEYFRAME_PROPERTY], report);
+    const raw = declarations[KEYFRAME_PROPERTY];
+    if (raw === undefined) {
+      report(step.headerLine, `Falta dizer a "position" no momento "${at}".`);
+      continue;
+    }
+
+    const position = Number(raw);
+    if (!Number.isFinite(position)) {
+      report(step.headerLine, `"${raw}" não é um número. Use 0 para o chão e 1 para o alto.`);
+      continue;
+    }
+
+    keyframes.push({ step: at as KeyframeStep, position, line: step.headerLine });
+  }
+
+  const faltando = KEYFRAME_STEPS.filter((step) => !keyframes.some((k) => k.step === step));
+  if (keyframes.length > 0 && faltando.length > 0) {
+    report(
+      block.headerLine,
+      `A animação "${name}" está sem: ${faltando.join(', ')}.`,
+      'aviso',
+    );
+  }
+
+  return { name, line: block.headerLine, keyframes };
+}
+
+/** Le a aparencia e as animacoes declaradas pelo aluno. */
 export function parseCss(source: string): CssParseResult {
   const clean = stripComments(source);
   const diagnostics: Diagnostic[] = [];
-  const report = (line: number, message: string, severity: 'erro' | 'aviso' = 'erro') =>
+  const report: Report = (line, message, severity = 'erro') =>
     diagnostics.push(diagnostic('css', line, message, severity));
 
   const rules: CssRule[] = [];
+  const animations: CssAnimation[] = [];
 
-  for (const block of splitBlocks(clean, report)) {
+  for (const block of splitBlocks(clean, 1, report)) {
+    if (/^@animation\b/i.test(block.header)) {
+      const animation = parseAnimation(block, report);
+      if (animation) animations.push(animation);
+      continue;
+    }
     if (block.header.startsWith('@')) {
-      report(block.headerLine, `A regra "${block.header}" ainda não é usada nesta fase.`, 'aviso');
+      report(block.headerLine, `A regra "${block.header}" não existe neste jogo.`);
       continue;
     }
     if (!block.header) {
@@ -162,11 +234,11 @@ export function parseCss(source: string): CssParseResult {
     rules.push({
       selector: block.header.toLowerCase(),
       line: block.headerLine,
-      declarations: parseDeclarations(block, clean, ALLOWED_PROPERTIES, report),
+      declarations: parseDeclarations(block, ALLOWED_PROPERTIES, report),
     });
   }
 
-  return { rules, diagnostics };
+  return { rules, animations, diagnostics };
 }
 
 /** Ultimo valor declarado para uma propriedade de um seletor. */
@@ -182,4 +254,8 @@ export function declaredValue(
     }
   }
   return value;
+}
+
+export function findAnimation(result: CssParseResult, name: string): CssAnimation | undefined {
+  return result.animations.find((animation) => animation.name === name.toLowerCase());
 }
