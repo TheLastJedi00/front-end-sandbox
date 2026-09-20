@@ -21,7 +21,8 @@ describe('parseHtml', () => {
   it('reclama de etiqueta desconhecida sem quebrar o resto', () => {
     const result = parseHtml('<sky><star></star><ball></ball></sky>');
 
-    expect(result.diagnostics.length).toBe(2);
+    // Abrir e fechar a mesma etiqueta desconhecida gera um unico aviso.
+    expect(result.diagnostics.length).toBe(1);
     expect(result.diagnostics[0].message).toContain('<star>');
     expect(isInside(result.nodes, 'sky', 'ball')).toBeTrue();
   });

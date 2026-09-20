@@ -76,7 +76,13 @@ export function parseHtml(source: string): HtmlParseResult {
     const tag = name.toLowerCase();
 
     if (!isAllowed(tag)) {
-      add(line, `A etiqueta <${tag}> não existe aqui. As que existem são: ${ALLOWED_TAGS.join(', ')}.`);
+      // A abertura e o fechamento sao o mesmo engano: avisar uma vez basta.
+      if (!closing) {
+        add(
+          line,
+          `A etiqueta <${tag}> não existe aqui. As que existem são: ${ALLOWED_TAGS.join(', ')}.`,
+        );
+      }
       continue;
     }
 
