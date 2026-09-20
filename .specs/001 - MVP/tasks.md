@@ -83,6 +83,7 @@ Princípios: `engine/` é puro e testável; `ide/` só apresenta; estado em sign
 - [x] **T6.4** — `README.md` com instruções de execução e o roteiro de 15 minutos da apresentação.
 - [x] **T6.5** — Testar no navegador, com o app rodando localmente, as três fases de ponta a ponta (exigência do SDD).
 - [x] **T6.6** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
+- [x] **T6.7** — Controles na tela para a fase 3, já que os alunos usam tablets (Q.7).
 
 ---
 
@@ -92,6 +93,8 @@ Princípios: `engine/` é puro e testável; `ide/` só apresenta; estado em sign
 
 - **Q.2 — Preview: DOM real.** ✅ Decidido.
 - **Q.3 — Editor próprio** (`<textarea>` + realce por regex), sem Monaco/CodeMirror. ✅ Decidido.
+- **Q.7 — Os alunos usam tablets.** ✅ Decidido: a fase 3 ganhou controles na tela (A, espaço, D),
+  que apertam as mesmas teclas que o código do aluno escuta. O teclado continua funcionando.
 
 As demais seguem pela recomendação, salvo orientação contrária.
 

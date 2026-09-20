@@ -37,8 +37,12 @@ abrem e fecham, seletores com chaves, condições com `if`.
 | 0–2 min | Tela de abertura: HTML é o que existe, CSS é como aparece, JS é o que acontece |
 | 2–6 min | **Fase 1** — um voluntário escreve as etiquetas; mostre o erro de propósito (`<star>`) e leia o painel de problemas em voz alta |
 | 6–10 min | **Fase 2** — a animação. Pergunte "o que muda entre o início e o meio?" antes de escrever |
-| 10–14 min | **Fase 3** — o teclado. Clique no palco antes de jogar; deixe um aluno chegar à bandeira |
+| 10–14 min | **Fase 3** — o controle. Use os botões na tela (ou o teclado, clicando antes no palco); deixe um aluno chegar à bandeira |
 | 14–15 min | Tela final: toda página da internet é feita exatamente assim |
+
+Na fase 3 há controles na tela (`A`, `espaço`, `D`) além do teclado, para funcionar em tablets:
+os botões apertam exatamente as mesmas teclas que o código do aluno escuta, então
+`if(key("D"))` continua sendo o que decide o que acontece.
 
 Botões que salvam a apresentação: **Dica** (revela uma dica por vez), **Mostrar solução** e
 **Reiniciar fase**. A trilha no topo permite pular direto para qualquer fase.

@@ -89,8 +89,8 @@ import { LevelProgress } from './level-progress';
           />
           @if (level().interactive) {
             <p class="controls">
-              Clique no palco e use <kbd>A</kbd> <kbd>D</kbd> para andar e
-              <kbd>espaço</kbd> para pular.
+              Use os botões de controle — ou, com teclado, clique no palco e use <kbd>A</kbd>
+              <kbd>D</kbd> para andar e <kbd>espaço</kbd> para pular.
             </p>
           }
 

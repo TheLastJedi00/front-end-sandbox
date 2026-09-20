@@ -3,6 +3,7 @@ import { GameLoop } from '../../engine/runtime/game-loop';
 import { Scene } from '../../engine/runtime/scene';
 import { GamePreview } from '../../ide/game-preview/game-preview';
 import { PreviewInput } from '../../ide/game-preview/preview-input';
+import { TouchControls } from '../../ide/game-preview/touch-controls';
 
 /**
  * Casca fina entre a pagina e o preview. Existe por um motivo de performance:
@@ -11,7 +12,7 @@ import { PreviewInput } from '../../ide/game-preview/preview-input';
  */
 @Component({
   selector: 'app-game-stage',
-  imports: [GamePreview, PreviewInput],
+  imports: [GamePreview, PreviewInput, TouchControls],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-game-preview
@@ -23,6 +24,10 @@ import { PreviewInput } from '../../ide/game-preview/preview-input';
       [scene]="scene()"
       [state]="loop.state()"
     />
+
+    @if (interactive()) {
+      <app-touch-controls [keys]="loop.keys" />
+    }
   `,
   styles: `
     :host {

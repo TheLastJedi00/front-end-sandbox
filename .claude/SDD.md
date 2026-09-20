@@ -12,3 +12,4 @@
 - Caso encontre alguma questão nova em aberto, tome a decisão recomendada e destaque no topo do PR ao fim da spec
 - Caso a questão envolva arquitetura, faturamento ou afete negativamente performance e aumente de mais consultas a bancos de dados, pergunte e aguarde decisão
 - testar no navegador rodando localmente a feature implementada para aprovar comportamento
+- Documentar resultados no README.md
