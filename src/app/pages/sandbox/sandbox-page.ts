@@ -34,6 +34,7 @@ import { findLevel, LAST_LEVEL, LEVELS } from '../../levels/level-definitions';
 import { CodeStorage } from '../../core/services/code-storage';
 import { ProgressStore } from '../../core/services/progress-store';
 import { BriefingStore } from '../../core/services/briefing-store';
+import { SyntaxCards } from '../../ide/syntax-cards/syntax-cards';
 import { ConceptOverlay } from '../../slides/concept-overlay/concept-overlay';
 import { GameStage } from './game-stage';
 import { GoalPanel } from './goal-panel';
@@ -52,10 +53,16 @@ import { LevelProgress } from './level-progress';
     GameStage,
     GoalPanel,
     LevelProgress,
+    ConceptOverlay,
+    SyntaxCards,
   ],
   providers: [GameLoop],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    @if (showConcept()) {
+      <app-concept-overlay [concept]="level().concept" (dismiss)="startLevel()" />
+    }
+
     <app-ide-shell>
       <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'">
         <app-level-progress [current]="level().id" />
@@ -64,12 +71,17 @@ import { LevelProgress } from './level-progress';
 
       <ng-container ideCode>
         <app-file-tabs [files]="files()" [active]="activeFile()" (select)="activeFile.set($event)" />
-        <app-code-editor
-          [value]="code()[activeFile()]"
-          [language]="activeFile()"
-          [label]="'Editor de ' + activeFile()"
-          (valueChange)="onCodeChange($event)"
-        />
+        <div class="editor-area">
+          <app-code-editor
+            [value]="code()[activeFile()]"
+            [language]="activeFile()"
+            [label]="'Editor de ' + activeFile()"
+            (valueChange)="onCodeChange($event)"
+          />
+          @if (showCards()) {
+            <app-syntax-cards [concept]="level().concept" (close)="showCards.set(false)" />
+          }
+        </div>
         <app-problems-panel [diagnostics]="diagnostics()" [hint]="hint()" />
       </ng-container>
 
@@ -80,6 +92,7 @@ import { LevelProgress } from './level-progress';
           <button type="button" class="tool" [disabled]="!hasMoreHints()" (click)="revealHint()">
             {{ hint() ? 'Outra dica' : 'Dica' }}
           </button>
+          <button type="button" class="tool" (click)="showCards.set(true)">Sintaxe</button>
           <button type="button" class="tool" (click)="showSolution()">Mostrar solução</button>
           <button type="button" class="tool" (click)="restart()">Reiniciar fase</button>
         </div>
@@ -113,6 +126,13 @@ import { LevelProgress } from './level-progress';
     </app-ide-shell>
   `,
   styles: `
+    .editor-area {
+      position: relative;
+      display: flex;
+      flex: 1;
+      min-block-size: 0;
+    }
+
     .stage-wrapper {
       padding: 0 var(--space-4) var(--space-4);
     }
@@ -206,6 +226,12 @@ export class SandboxPage implements OnInit {
   protected readonly showConcept = linkedSignal<boolean>(
     () => !this.briefings.wasSeen(this.level().id),
   );
+
+  /** Cards de sintaxe: abrem com a fase e saem na primeira tecla digitada. */
+  protected readonly showCards = linkedSignal<boolean>(() => {
+    this.level();
+    return true;
+  });
 
   protected readonly files = computed(() =>
     SOURCE_FILES.filter((file) => this.level().enabledFiles.includes(file.id)),
@@ -322,6 +348,8 @@ export class SandboxPage implements OnInit {
   }
 
   protected onCodeChange(text: string): void {
+    // Digitar e o sinal de que os cards ja cumpriram o seu papel.
+    this.showCards.set(false);
     this.code.update((code) => ({ ...code, [this.activeFile()]: text }));
   }
 }
