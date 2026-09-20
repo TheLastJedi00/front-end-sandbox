@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -7,6 +8,7 @@ import {
   input,
   linkedSignal,
   numberAttribute,
+  signal,
   OnInit,
 } from '@angular/core';
 import {
@@ -78,6 +80,7 @@ import { LevelProgress } from './level-progress';
             [label]="'Editor de ' + activeFile()"
             [concept]="level().concept"
             [assistEnabled]="assistEnabled()"
+            [focusRequest]="focusRequest()"
             (valueChange)="onCodeChange($event)"
           />
           @if (showCards()) {
@@ -209,6 +212,12 @@ export class SandboxPage implements OnInit {
   private readonly progress = inject(ProgressStore);
   private readonly storage = inject(CodeStorage);
   private readonly briefings = inject(BriefingStore);
+
+  /**
+   * Cada incremento leva o cursor de volta ao editor. Os cards de sintaxe cobrem
+   * a area de codigo, entao sem foco o aluno nao teria como comecar a digitar.
+   */
+  protected readonly focusRequest = signal(0);
   protected readonly loop = inject(GameLoop);
 
   protected readonly level = computed(() => findLevel(this.levelId()) ?? LEVELS[0]);
@@ -238,7 +247,8 @@ export class SandboxPage implements OnInit {
     return false;
   });
   protected readonly assistEnabled = computed(
-    () => !this.solutionShown() && !this.validation().completed,
+    // Com os cards de sintaxe na frente ja ha ajuda na tela; a sugestao espera.
+    () => !this.solutionShown() && !this.validation().completed && !this.showCards(),
   );
 
   /** Cards de sintaxe: abrem com a fase e saem na primeira tecla digitada. */
@@ -304,6 +314,11 @@ export class SandboxPage implements OnInit {
   );
 
   constructor() {
+    // Sem o slide de conceito na frente, a fase ja abre com o cursor no editor.
+    afterNextRender(() => {
+      if (!this.showConcept()) this.askFocus();
+    });
+
     effect(() => {
       const level = this.level();
       this.loop.configure({
@@ -338,6 +353,11 @@ export class SandboxPage implements OnInit {
   protected startLevel(): void {
     this.briefings.markSeen(this.level().id);
     this.showConcept.set(false);
+    this.askFocus();
+  }
+
+  private askFocus(): void {
+    this.focusRequest.update((n) => n + 1);
   }
 
   protected goToNext(): void {

@@ -1,8 +1,11 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   effect,
+  inject,
+  Injector,
   input,
   OnDestroy,
   output,
@@ -363,6 +366,12 @@ export class CodeEditor implements OnDestroy {
   readonly concept = input.required<LevelConcept>();
   /** Desliga a sugestao automatica (fase concluida, solucao na tela). */
   readonly assistEnabled = input(true);
+  /**
+   * Cada valor novo pede o cursor de volta ao editor. E um input, e nao uma
+   * chamada de fora, porque uma referencia guardada pela pagina pode apontar
+   * para um editor ja substituido.
+   */
+  readonly focusRequest = input(0);
   readonly valueChange = output<string>();
 
   protected readonly draft = signal('');
@@ -431,6 +440,7 @@ export class CodeEditor implements OnDestroy {
   private readonly mirror = viewChild.required<ElementRef<HTMLElement>>('mirror');
   private readonly probe = viewChild.required<ElementRef<HTMLElement>>('probe');
   private readonly input = viewChild.required<ElementRef<HTMLTextAreaElement>>('input');
+  private readonly injector = inject(Injector);
   private timer?: ReturnType<typeof setTimeout>;
   private idleTimer?: ReturnType<typeof setTimeout>;
 
@@ -444,6 +454,18 @@ export class CodeEditor implements OnDestroy {
 
       this.draft.set(incoming);
       this.closeList();
+    });
+
+    // A assistencia volta a contar sozinha quando e reabilitada (por exemplo,
+    // quando os cards de sintaxe saem da frente).
+    effect(() => (this.assistEnabled() ? this.scheduleGhost() : this.dismissGhost()));
+
+    effect(() => {
+      if (this.focusRequest() <= 0) return;
+
+      // Depois do proximo render: quem pede o foco normalmente acabou de fechar
+      // algo que estava por cima do editor.
+      afterNextRender(() => this.focusEditor(), { injector: this.injector });
     });
   }
 
@@ -574,6 +596,11 @@ export class CodeEditor implements OnDestroy {
         concept: this.concept(),
       }),
     );
+  }
+
+  /** Coloca o cursor no editor — usado quando a fase comeca. */
+  focusEditor(): void {
+    this.input().nativeElement.focus();
   }
 
   protected syncCaret(): void {

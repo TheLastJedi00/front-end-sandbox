@@ -120,10 +120,12 @@ export function ghostSuggestion({ text, caret, file, concept }: GhostContext): G
   const pending = STEPS[concept].find((step) => !step.done(code));
   if (!pending) return null;
 
-  // Uma linha ja comecada nao pode receber um bloco no meio dela.
+  // Uma linha ja comecada nao pode receber um bloco no meio dela, e o que vem
+  // depois do cursor tambem nao pode acabar grudado no bloco inserido.
   const before = text.slice(0, caret);
-  const needsBreak = /\S/.test(before.slice(before.lastIndexOf('\n') + 1));
-  const insert = needsBreak ? `\n${pending.block}` : pending.block;
+  const after = text.slice(caret);
+  const openingBreak = /\S/.test(before.slice(before.lastIndexOf('\n') + 1)) ? '\n' : '';
+  const closingBreak = /^\s*\S/.test(after) && !after.startsWith('\n') ? '\n' : '';
 
-  return { insert, summary: pending.summary };
+  return { insert: `${openingBreak}${pending.block}${closingBreak}`, summary: pending.summary };
 }

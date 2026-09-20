@@ -9,7 +9,9 @@ import { LevelConcept } from '../../core/models';
 @Component({
   selector: 'app-syntax-cards',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'syntax-cards' },
+  // Um toque em qualquer lugar dos cards ja significa "quero escrever": segurar
+  // o clique aqui deixaria o aluno sem conseguir chegar ao editor embaixo.
+  host: { class: 'syntax-cards', '(click)': 'close.emit()' },
   template: `
     <div class="sheet" role="note" [attr.aria-label]="'Sintaxe de ' + concept()">
       <header class="head">

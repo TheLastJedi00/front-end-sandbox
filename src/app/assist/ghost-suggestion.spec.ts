@@ -82,6 +82,17 @@ describe('ghostSuggestion', () => {
     expect(suggestion.insert.startsWith('\n')).toBeTrue();
   });
 
+  it('quebra a linha para o bloco nao colar no que vem depois do cursor', () => {
+    const suggestion = ghostSuggestion({
+      text: '<sky></sky>',
+      caret: 5,
+      file: 'html',
+      concept: 'HTML',
+    })!;
+
+    expect(suggestion.insert.endsWith('\n')).toBeTrue();
+  });
+
   it('nao sugere nada num arquivo que nao e o da fase', () => {
     expect(ghostSuggestion({ text: '', caret: 0, file: 'html', concept: 'CSS' })).toBeNull();
     expect(ghostSuggestion({ text: '', caret: 0, file: 'css', concept: 'JavaScript' })).toBeNull();
