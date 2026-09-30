@@ -119,8 +119,10 @@ interface ListingLine {
     .text {
       white-space: pre;
       /* A linha "e digitada": o recorte abre da esquerda para a direita em
-         degraus, um por caractere. */
-      animation: type var(--duration) steps(var(--chars), end) both;
+         degraus, um por caractere. Sem preencher o fim: com steps() o Chrome
+         para no penultimo degrau e cortava o ultimo caractere; terminada a
+         animacao, vale o estilo normal, sem recorte. */
+      animation: type var(--duration) steps(var(--chars), end) backwards;
       animation-delay: var(--delay);
     }
 
