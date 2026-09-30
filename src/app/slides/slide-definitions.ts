@@ -124,12 +124,9 @@ export const OPENING_DECK: readonly SlideDefinition[] = [
   },
 ];
 
-/**
- * Slide que abre cada fase. Fica curto de proposito: ele serve para dar o
- * vocabulario antes de a mao ir para o teclado, nao para dar aula.
- */
-export const CONCEPT_SLIDES: Readonly<Record<LevelConcept, SlideDefinition>> = {
-  HTML: {
+/** Fase 1: o que e HTML e como uma tag e escrita. */
+const HTML_SEQUENCE: readonly SlideDefinition[] = [
+  {
     id: 'conceito-html',
     eyebrow: 'fase 1 · HTML',
     title: 'HTML cria as coisas.',
@@ -142,7 +139,11 @@ export const CONCEPT_SLIDES: Readonly<Record<LevelConcept, SlideDefinition>> = {
       lines: ['<sky>', '    <ball></ball>', '</sky>', '', '<!-- a bola está dentro do céu -->'],
     },
   },
-  CSS: {
+];
+
+/** Fase 2: o que e CSS, como uma regra e escrita e como a animacao funciona. */
+const CSS_SEQUENCE: readonly SlideDefinition[] = [
+  {
     id: 'conceito-css',
     eyebrow: 'fase 2 · CSS',
     title: 'CSS diz como as coisas aparecem.',
@@ -165,7 +166,11 @@ export const CONCEPT_SLIDES: Readonly<Record<LevelConcept, SlideDefinition>> = {
       ],
     },
   },
-  JavaScript: {
+];
+
+/** Fase 3: o que e JavaScript e como uma condicao e escrita. */
+const JS_SEQUENCE: readonly SlideDefinition[] = [
+  {
     id: 'conceito-js',
     eyebrow: 'fase 3 · JavaScript',
     title: 'JavaScript reage ao jogador.',
@@ -178,8 +183,18 @@ export const CONCEPT_SLIDES: Readonly<Record<LevelConcept, SlideDefinition>> = {
       lines: ['if(key("D")){', '    avancar()', '}'],
     },
   },
+];
+
+/**
+ * Sequencia que abre cada fase: o conceito primeiro e, depois dele, a sintaxe
+ * desmontada. Serve para dar o vocabulario antes de a mao ir para o teclado.
+ */
+export const CONCEPT_SLIDES: Readonly<Record<LevelConcept, readonly SlideDefinition[]>> = {
+  HTML: HTML_SEQUENCE,
+  CSS: CSS_SEQUENCE,
+  JavaScript: JS_SEQUENCE,
 };
 
-export function conceptSlide(concept: LevelConcept): SlideDefinition {
+export function conceptSlides(concept: LevelConcept): readonly SlideDefinition[] {
   return CONCEPT_SLIDES[concept];
 }
