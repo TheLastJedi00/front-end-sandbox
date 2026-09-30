@@ -1,4 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { highlight, Token } from '../../ide/code-editor/highlight';
+import { CodeAnatomy } from '../code-anatomy/code-anatomy';
+import { CodeListing } from '../code-listing/code-listing';
+import { ElementTree } from '../element-tree/element-tree';
 import { SlideDefinition } from '../slide-definitions';
 
 /**
@@ -8,42 +12,74 @@ import { SlideDefinition } from '../slide-definitions';
  */
 @Component({
   selector: 'app-slide',
+  imports: [CodeListing, CodeAnatomy, ElementTree],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'slide', '[attr.data-slide]': 'slide().id' },
   template: `
+    <!-- Cada bloco entra depois do anterior: --i e a ordem de entrada. -->
     <article class="body" [style.--accent]="accent()">
       @if (slide().eyebrow) {
-        <p class="eyebrow">{{ slide().eyebrow }}</p>
+        <p class="eyebrow enter" style="--i: 0">{{ slide().eyebrow }}</p>
       }
-      <h1 class="title">{{ slide().title }}</h1>
+      <h1 class="title" [attr.aria-label]="slide().title">
+        @for (word of titleWords(); track $index) {
+          <span class="word" aria-hidden="true" [style.--w]="$index">{{ word }} </span>
+        }
+      </h1>
 
       @if (slide().lead) {
-        <p class="lead">{{ slide().lead }}</p>
+        <p class="lead enter" style="--i: 2">{{ slide().lead }}</p>
       }
 
       @if (slide().points; as points) {
         <ul class="points">
-          @for (point of points; track point.label) {
-            <li class="point" [style.--accent]="point.accent ?? accent()">
+          <!-- Os pontos esperam o apresentador: um por etapa. O espaco deles ja
+               fica reservado para o slide nao pular quando o proximo aparece. -->
+          @for (point of points; track point.label; let j = $index) {
+            <li
+              class="point"
+              [class.point--shown]="j < step()"
+              [attr.aria-hidden]="j < step() ? null : 'true'"
+              [style.--accent]="point.accent ?? accent()"
+            >
               <span class="label">{{ point.label }}</span>
               <strong class="text">{{ point.text }}</strong>
-              @if (point.code) {
-                <code class="inline-code">{{ point.code }}</code>
+              @if (pointTokens()[j]; as tokens) {
+                <code class="inline-code"
+                  >@for (token of tokens; track $index) {<span [attr.class]="'tk--' + token.kind">{{
+                    token.text
+                  }}</span>}</code
+                >
               }
             </li>
           }
         </ul>
       }
 
-      @if (slide().code; as code) {
-        <figure class="code">
-          @if (code.caption) {
-            <figcaption class="caption">{{ code.caption }}</figcaption>
-          }
-          <pre class="listing"><code>@for (line of code.lines; track $index) {{{ line }}
-}</code></pre>
-        </figure>
-      }
+      <!-- Codigo e desenho lado a lado: o aluno le um e ve o outro. -->
+      <div class="visuals" [class.visuals--pair]="!!slide().tree">
+        @if (slide().code; as code) {
+          <app-code-listing
+            class="enter"
+            [style.--i]="codeOrder"
+            [code]="code"
+            [startDelay]="codeDelay"
+          />
+        }
+
+        @if (slide().anatomy; as anatomy) {
+          <app-code-anatomy
+            class="enter"
+            [style.--i]="codeOrder"
+            [anatomy]="anatomy"
+            [step]="anatomyStep()"
+          />
+        }
+
+        @if (slide().tree; as tree) {
+          <app-element-tree class="tree" [node]="tree" />
+        }
+      </div>
     </article>
   `,
   styles: `
@@ -55,13 +91,63 @@ import { SlideDefinition } from '../slide-definitions';
       overflow: auto;
     }
 
+    .visuals {
+      display: grid;
+      gap: var(--space-6);
+      inline-size: 100%;
+    }
+
+    .visuals:empty {
+      display: none;
+    }
+
+    @media (min-width: 900px) {
+      .visuals--pair {
+        grid-template-columns: 3fr 2fr;
+        align-items: center;
+      }
+    }
+
     .body {
       display: grid;
       justify-items: start;
       gap: var(--space-4);
       inline-size: 100%;
       max-inline-size: 56rem;
-      animation: slide-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    /* Os blocos esperam a transicao do slide comecar e entram em cascata. */
+    .enter {
+      animation: rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: calc(var(--entry-base) + var(--i, 0) * var(--entry-gap));
+    }
+
+    :host {
+      --entry-base: 120ms;
+      --entry-gap: 110ms;
+    }
+
+    .word {
+      display: inline-block;
+      white-space: pre;
+      animation: word-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: calc(var(--entry-base) + var(--entry-gap) + var(--w) * 60ms);
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(1.5rem);
+        filter: blur(4px);
+      }
+    }
+
+    @keyframes word-in {
+      from {
+        opacity: 0;
+        transform: translateY(0.6em) rotateX(-60deg);
+        filter: blur(6px);
+      }
     }
 
     .eyebrow {
@@ -79,7 +165,13 @@ import { SlideDefinition } from '../slide-definitions';
       font-weight: 600;
       line-height: 1.1;
       letter-spacing: -0.02em;
-      background: linear-gradient(120deg, var(--text-inverse), var(--accent) 140%);
+      perspective: 40rem;
+    }
+
+    /* O gradiente fica em cada palavra: com transform nos filhos, o
+       background-clip do titulo inteiro nao acompanharia o movimento. */
+    .word {
+      background: linear-gradient(120deg, var(--text-inverse) 30%, var(--accent) 180%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
@@ -112,6 +204,23 @@ import { SlideDefinition } from '../slide-definitions';
       border-block-start: 3px solid var(--accent);
       border-radius: var(--radius-lg);
       background: var(--surface-panel);
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .point--shown {
+      opacity: 1;
+      visibility: visible;
+      animation: pop 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      box-shadow: 0 1rem 2.5rem -1.5rem var(--accent);
+    }
+
+    @keyframes pop {
+      from {
+        opacity: 0;
+        transform: translateY(1rem) scale(0.9);
+        filter: blur(4px);
+      }
     }
 
     .label {
@@ -128,8 +237,7 @@ import { SlideDefinition } from '../slide-definitions';
       line-height: 1.4;
     }
 
-    .inline-code,
-    .listing {
+    .inline-code {
       padding: var(--space-2) var(--space-3);
       border-radius: var(--radius-sm);
       background: var(--surface-editor);
@@ -137,43 +245,31 @@ import { SlideDefinition } from '../slide-definitions';
       font-family: var(--font-mono);
       font-size: 0.875rem;
     }
-
-    .code {
-      inline-size: 100%;
-      margin: 0;
-    }
-
-    .caption {
-      margin-block-end: var(--space-2);
-      color: var(--text-dim);
-      font-family: var(--font-mono);
-      font-size: 0.8125rem;
-    }
-
-    .listing {
-      margin: 0;
-      padding: var(--space-4);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-md);
-      font-size: clamp(0.875rem, 1.4vw, 1.125rem);
-      line-height: var(--line-code);
-      overflow-x: auto;
-    }
-
-    @keyframes slide-in {
-      from {
-        opacity: 0;
-        transform: translateY(1.25rem);
-      }
-      to {
-        opacity: 1;
-        transform: none;
-      }
-    }
   `,
 })
 export class Slide {
   readonly slide = input.required<SlideDefinition>();
+  /** Quantas etapas ja foram reveladas (ver `deck-navigation`). */
+  readonly step = input(0);
 
   protected readonly accent = computed(() => this.slide().accent ?? 'var(--state-hint)');
+  protected readonly titleWords = computed(() => this.slide().title.split(' '));
+  /** O codigo de cada ponto ja com o realce da IDE (null quando nao tem codigo). */
+  protected readonly pointTokens = computed(() =>
+    (this.slide().points ?? []).map((point): readonly Token[] | null => {
+      if (!point.code) return null;
+      return point.language
+        ? highlight(point.code, point.language)
+        : [{ text: point.code, kind: 'plain' }];
+    }),
+  );
+  /** As etapas da anatomia vem depois das dos pontos. */
+  protected readonly anatomyStep = computed(() =>
+    Math.max(0, this.step() - (this.slide().points?.length ?? 0)),
+  );
+
+  /** O codigo entra logo depois do texto; os pontos esperam as etapas. */
+  protected readonly codeOrder = 3;
+  /** A digitacao comeca quando a janela do codigo ja terminou de subir. */
+  protected readonly codeDelay = 120 + this.codeOrder * 110 + 280;
 }

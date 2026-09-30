@@ -1,4 +1,23 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
+import { injectIsBrowser } from '../../core/platform/browser';
+import {
+  advance,
+  advanceWhole,
+  completed,
+  DECK_START,
+  DeckPosition,
+  retreat,
+  retreatWhole,
+  stepsOf,
+} from '../deck-navigation';
 import { SlideDefinition } from '../slide-definitions';
 import { Slide } from '../slide/slide';
 
@@ -20,10 +39,26 @@ const SWIPE_MIN = 48;
     '(document:keydown)': 'onKeydown($event)',
     '(pointerdown)': 'onPointerDown($event)',
     '(pointerup)': 'onPointerUp($event)',
+    '[style.--deck-accent]': 'current().accent ?? null',
   },
   template: `
-    <div class="stage" (click)="onStageClick($event)">
-      <app-slide [slide]="current()" />
+    <div class="ambient" aria-hidden="true">
+      <span class="glow glow--a"></span>
+      <span class="glow glow--b"></span>
+      <span class="grid"></span>
+    </div>
+
+    <!-- Rastrear pelo id recria o slide a cada troca: a entrada roda de novo, e
+         o slide que sai continua na tela ate terminar a animacao de saida. -->
+    <div class="stage" [attr.data-direction]="direction()" (click)="onStageClick($event)">
+      @for (slide of shown(); track slide.id) {
+        <app-slide
+          [slide]="slide"
+          [step]="position().step"
+          animate.enter="slide-enter"
+          animate.leave="slide-leave"
+        />
+      }
     </div>
 
     <footer class="controls">
@@ -34,10 +69,12 @@ const SWIPE_MIN = 48;
       <ol class="dots" [attr.aria-label]="'Slide ' + (index() + 1) + ' de ' + total()">
         @for (slide of slides(); track slide.id; let i = $index) {
           <li>
+            <!-- O ponto do slide atual vira uma barrinha que enche a cada etapa. -->
             <button
               class="dot"
               type="button"
               [class.dot--active]="i === index()"
+              [style.--fill.%]="i === index() ? stepProgress() : null"
               [attr.aria-label]="'Ir para o slide ' + (i + 1)"
               [attr.aria-current]="i === index() ? 'true' : null"
               (click)="go(i)"
@@ -46,20 +83,17 @@ const SWIPE_MIN = 48;
         }
       </ol>
 
-      @if (isLast()) {
-        <button class="nav nav--primary" type="button" (click)="finish.emit()">
-          {{ finishLabel() }} <span aria-hidden="true">→</span>
-        </button>
-      } @else {
-        <button class="nav nav--primary" type="button" (click)="next()">
-          Avançar <span aria-hidden="true">→</span>
-        </button>
-      }
+      <!-- Um botao so, com o texto trocando: o foco nao se perde no ultimo slide. -->
+      <button class="nav nav--primary" type="button" (click)="next()">
+        {{ atEnd() ? finishLabel() : 'Avançar' }} <span aria-hidden="true">→</span>
+      </button>
     </footer>
 
     <button class="skip" type="button" (click)="finish.emit()">{{ skipLabel() }}</button>
 
-    <p class="live" aria-live="polite">{{ current().title }}</p>
+    <!-- Titulo ao trocar de slide; cada ponto quando ele aparece. As partes da
+         anatomia tem o seu proprio anuncio, dentro do componente. -->
+    <p class="live" aria-live="polite">{{ announcement() }}</p>
   `,
   styles: `
     :host {
@@ -68,11 +102,140 @@ const SWIPE_MIN = 48;
       grid-template-rows: 1fr auto;
       min-block-size: 100%;
       touch-action: pan-y;
+      transition: --deck-accent 900ms ease;
+    }
+
+    /* Fundo vivo, na cor da linguagem do slide. Fica atras de tudo e nunca
+       recebe clique. */
+    .ambient {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .glow {
+      position: absolute;
+      inline-size: 55vmax;
+      block-size: 55vmax;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--deck-accent) 38%, transparent) 0%,
+        transparent 65%
+      );
+      filter: blur(20px);
+    }
+
+    .glow--a {
+      inset-block-start: -30vmax;
+      inset-inline-start: -15vmax;
+      animation: drift-a 18s ease-in-out infinite alternate;
+    }
+
+    .glow--b {
+      inset-block-end: -35vmax;
+      inset-inline-end: -20vmax;
+      opacity: 0.7;
+      animation: drift-b 22s ease-in-out infinite alternate;
+    }
+
+    /* Uma grade discreta, como papel quadriculado de quem esta projetando. */
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(color-mix(in srgb, var(--deck-accent) 11%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--deck-accent) 11%, transparent) 1px, transparent 1px);
+      background-size: 3rem 3rem;
+      mask-image: radial-gradient(ellipse at 50% 40%, #000 0%, transparent 70%);
+      animation: grid-pan 30s linear infinite;
+    }
+
+    @keyframes drift-a {
+      to {
+        transform: translate(12vmax, 8vmax) scale(1.15);
+      }
+    }
+
+    @keyframes drift-b {
+      to {
+        transform: translate(-10vmax, -6vmax) scale(0.9);
+      }
+    }
+
+    @keyframes grid-pan {
+      to {
+        background-position: 3rem 3rem;
+      }
+    }
+
+    .stage,
+    .controls,
+    .skip {
+      z-index: 1;
     }
 
     .stage {
+      position: relative;
       display: grid;
       min-block-size: 0;
+      perspective: 1200px;
+      overflow: hidden;
+    }
+
+    /* O slide que sai e o que entra ocupam a mesma celula durante a troca. */
+    .stage > app-slide {
+      grid-area: 1 / 1;
+    }
+
+    .slide-enter {
+      animation: enter-from-right 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .slide-leave {
+      pointer-events: none;
+      animation: leave-to-left 320ms cubic-bezier(0.7, 0, 0.84, 0) both;
+    }
+
+    .stage[data-direction='backward'] .slide-enter {
+      animation-name: enter-from-left;
+    }
+
+    .stage[data-direction='backward'] .slide-leave {
+      animation-name: leave-to-right;
+    }
+
+    @keyframes enter-from-right {
+      from {
+        opacity: 0;
+        transform: translateX(8%) rotateY(-10deg) scale(0.96);
+        filter: blur(8px);
+      }
+    }
+
+    @keyframes enter-from-left {
+      from {
+        opacity: 0;
+        transform: translateX(-8%) rotateY(10deg) scale(0.96);
+        filter: blur(8px);
+      }
+    }
+
+    @keyframes leave-to-left {
+      to {
+        opacity: 0;
+        transform: translateX(-8%) rotateY(10deg) scale(0.96);
+        filter: blur(8px);
+      }
+    }
+
+    @keyframes leave-to-right {
+      to {
+        opacity: 0;
+        transform: translateX(8%) rotateY(-10deg) scale(0.96);
+        filter: blur(8px);
+      }
     }
 
     .controls {
@@ -121,9 +284,22 @@ const SWIPE_MIN = 48;
       background: transparent;
     }
 
+    .dot {
+      transition:
+        inline-size 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-radius 300ms;
+    }
+
     .dot--active {
-      border-color: transparent;
-      background: var(--state-hint);
+      inline-size: 2.5rem;
+      border-color: color-mix(in srgb, var(--deck-accent) 60%, transparent);
+      border-radius: 999px;
+      background: linear-gradient(
+          90deg,
+          var(--deck-accent) var(--fill, 100%),
+          transparent var(--fill, 100%)
+        )
+        no-repeat;
     }
 
     .skip {
@@ -148,7 +324,7 @@ const SWIPE_MIN = 48;
       clip-path: inset(50%);
     }
 
-    @media (max-inline-size: 600px) {
+    @media (max-width: 600px) {
       .nav {
         padding: var(--space-3) var(--space-4);
       }
@@ -164,30 +340,77 @@ export class SlideDeck {
   /** O deck acabou — por ter chegado ao fim ou por ter sido pulado. */
   readonly finish = output<void>();
 
-  protected readonly index = signal(0);
+  /**
+   * Quem pediu menos movimento ao sistema ve cada slide ja completo: revelar
+   * pedaco por pedaco so faz sentido com a animacao que acompanha.
+   */
+  private readonly reducedMotion =
+    injectIsBrowser() && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /** Slide atual e quantas etapas dele ja apareceram. */
+  protected readonly position = linkedSignal<DeckPosition>(() =>
+    this.reducedMotion ? completed(this.slides(), 0) : DECK_START,
+  );
+  protected readonly index = computed(() => this.position().slide);
   protected readonly total = computed(() => this.slides().length);
   protected readonly current = computed(() => this.slides()[this.index()]);
-  protected readonly isFirst = computed(() => this.index() === 0);
-  protected readonly isLast = computed(() => this.index() >= this.total() - 1);
+  protected readonly isFirst = computed(
+    () => this.position().slide === 0 && this.position().step === 0,
+  );
+  /** Nao ha mais etapa nem slide: o proximo "Avancar" encerra o deck. */
+  protected readonly atEnd = computed(() => advance(this.slides(), this.position()) === null);
+  /** Quanto do slide atual ja foi revelado, de 0 a 100. */
+  protected readonly stepProgress = computed(() => {
+    const steps = stepsOf(this.current());
+    return steps === 0 ? 100 : (this.position().step / steps) * 100;
+  });
+  /** O que o leitor de tela diz depois de cada avanco. */
+  protected readonly announcement = computed(() => {
+    const { step } = this.position();
+    const slide = this.current();
+    if (step === 0) return slide.title;
+
+    const point = slide.points?.[step - 1];
+    // Passados os pontos, as etapas sao da anatomia, que se anuncia sozinha.
+    return point ? `${point.label}: ${point.text}` : '';
+  });
+  /** Lista de um item so: e o `track` dela que recria o slide a cada troca. */
+  protected readonly shown = computed(() => [this.current()]);
+  /** Para onde a apresentacao andou por ultimo — decide o lado da transicao. */
+  protected readonly direction = signal<'forward' | 'backward'>('forward');
 
   private pointerStartX: number | null = null;
   /** Um arrasto ja trocou o slide; o `click` que vem depois dele nao conta. */
   private swiped = false;
 
   next(): void {
-    if (this.isLast()) {
+    const step = this.reducedMotion ? advanceWhole : advance;
+    const target = step(this.slides(), this.position());
+    if (target === null) {
       this.finish.emit();
       return;
     }
-    this.index.update((i) => i + 1);
+    this.moveTo(target);
   }
 
   previous(): void {
-    this.index.update((i) => Math.max(0, i - 1));
+    const step = this.reducedMotion ? retreatWhole : retreat;
+    this.moveTo(step(this.slides(), this.position()));
   }
 
   go(index: number): void {
-    this.index.set(Math.min(Math.max(index, 0), this.total() - 1));
+    const slide = Math.min(Math.max(index, 0), this.total() - 1);
+    if (slide === this.index()) return;
+
+    this.moveTo(this.reducedMotion ? completed(this.slides(), slide) : { slide, step: 0 });
+  }
+
+  private moveTo(target: DeckPosition): void {
+    const from = this.index();
+    if (target.slide !== from) {
+      this.direction.set(target.slide > from ? 'forward' : 'backward');
+    }
+    this.position.set(target);
   }
 
   protected onKeydown(event: KeyboardEvent): void {

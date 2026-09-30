@@ -60,7 +60,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
       overflow-y: auto;
     }
 
-    @media (max-inline-size: 900px) {
+    @media (max-width: 900px) {
       :host {
         block-size: auto;
       }
@@ -69,7 +69,10 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
         grid-template-columns: minmax(0, 1fr);
       }
 
+      /* Empilhado, o editor precisa de altura propria: sem ela, o painel de
+         problemas e os cards espremiam as linhas de codigo. */
       .code {
+        min-block-size: 60dvh;
         border-inline-end: none;
         border-block-end: 1px solid var(--border-soft);
       }

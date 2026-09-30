@@ -194,6 +194,23 @@ function highlightJs(source: string): Token[] {
   return tokens;
 }
 
+/**
+ * O mesmo realce, quebrado por linha. Os slides revelam o codigo linha a linha,
+ * e um token pode atravessar a quebra (espaco em branco, comentario longo).
+ */
+export function highlightLines(source: string, language: SourceFileId): Token[][] {
+  const lines: Token[][] = [[]];
+
+  for (const token of highlight(source, language)) {
+    token.text.split('\n').forEach((piece, i) => {
+      if (i > 0) lines.push([]);
+      if (piece) lines[lines.length - 1].push({ text: piece, kind: token.kind });
+    });
+  }
+
+  return lines;
+}
+
 export function highlight(source: string, language: SourceFileId): Token[] {
   switch (language) {
     case 'html':
