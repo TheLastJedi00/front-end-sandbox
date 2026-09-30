@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { advance, DECK_START, DeckPosition, retreat, stepsOf } from '../deck-navigation';
 import { SlideDefinition } from '../slide-definitions';
 import { Slide } from '../slide/slide';
 
@@ -33,7 +34,12 @@ const SWIPE_MIN = 48;
          o slide que sai continua na tela ate terminar a animacao de saida. -->
     <div class="stage" [attr.data-direction]="direction()" (click)="onStageClick($event)">
       @for (slide of shown(); track slide.id) {
-        <app-slide [slide]="slide" animate.enter="slide-enter" animate.leave="slide-leave" />
+        <app-slide
+          [slide]="slide"
+          [step]="position().step"
+          animate.enter="slide-enter"
+          animate.leave="slide-leave"
+        />
       }
     </div>
 
@@ -45,10 +51,12 @@ const SWIPE_MIN = 48;
       <ol class="dots" [attr.aria-label]="'Slide ' + (index() + 1) + ' de ' + total()">
         @for (slide of slides(); track slide.id; let i = $index) {
           <li>
+            <!-- O ponto do slide atual vira uma barrinha que enche a cada etapa. -->
             <button
               class="dot"
               type="button"
               [class.dot--active]="i === index()"
+              [style.--fill.%]="i === index() ? stepProgress() : null"
               [attr.aria-label]="'Ir para o slide ' + (i + 1)"
               [attr.aria-current]="i === index() ? 'true' : null"
               (click)="go(i)"
@@ -57,15 +65,10 @@ const SWIPE_MIN = 48;
         }
       </ol>
 
-      @if (isLast()) {
-        <button class="nav nav--primary" type="button" (click)="finish.emit()">
-          {{ finishLabel() }} <span aria-hidden="true">→</span>
-        </button>
-      } @else {
-        <button class="nav nav--primary" type="button" (click)="next()">
-          Avançar <span aria-hidden="true">→</span>
-        </button>
-      }
+      <!-- Um botao so, com o texto trocando: o foco nao se perde no ultimo slide. -->
+      <button class="nav nav--primary" type="button" (click)="next()" #primary>
+        {{ atEnd() ? finishLabel() : 'Avançar' }} <span aria-hidden="true">→</span>
+      </button>
     </footer>
 
     <button class="skip" type="button" (click)="finish.emit()">{{ skipLabel() }}</button>
@@ -261,9 +264,22 @@ const SWIPE_MIN = 48;
       background: transparent;
     }
 
+    .dot {
+      transition:
+        inline-size 300ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-radius 300ms;
+    }
+
     .dot--active {
-      border-color: transparent;
-      background: var(--state-hint);
+      inline-size: 2.5rem;
+      border-color: color-mix(in srgb, var(--deck-accent) 60%, transparent);
+      border-radius: 999px;
+      background: linear-gradient(
+          90deg,
+          var(--deck-accent) var(--fill, 100%),
+          transparent var(--fill, 100%)
+        )
+        no-repeat;
     }
 
     .skip {
@@ -304,11 +320,21 @@ export class SlideDeck {
   /** O deck acabou — por ter chegado ao fim ou por ter sido pulado. */
   readonly finish = output<void>();
 
-  protected readonly index = signal(0);
+  /** Slide atual e quantas etapas dele ja apareceram. */
+  protected readonly position = signal<DeckPosition>(DECK_START);
+  protected readonly index = computed(() => this.position().slide);
   protected readonly total = computed(() => this.slides().length);
   protected readonly current = computed(() => this.slides()[this.index()]);
-  protected readonly isFirst = computed(() => this.index() === 0);
-  protected readonly isLast = computed(() => this.index() >= this.total() - 1);
+  protected readonly isFirst = computed(
+    () => this.position().slide === 0 && this.position().step === 0,
+  );
+  /** Nao ha mais etapa nem slide: o proximo "Avancar" encerra o deck. */
+  protected readonly atEnd = computed(() => advance(this.slides(), this.position()) === null);
+  /** Quanto do slide atual ja foi revelado, de 0 a 100. */
+  protected readonly stepProgress = computed(() => {
+    const steps = stepsOf(this.current());
+    return steps === 0 ? 100 : (this.position().step / steps) * 100;
+  });
   /** Lista de um item so: e o `track` dela que recria o slide a cada troca. */
   protected readonly shown = computed(() => [this.current()]);
   /** Para onde a apresentacao andou por ultimo — decide o lado da transicao. */
@@ -319,23 +345,31 @@ export class SlideDeck {
   private swiped = false;
 
   next(): void {
-    if (this.isLast()) {
+    const target = advance(this.slides(), this.position());
+    if (target === null) {
       this.finish.emit();
       return;
     }
-    this.go(this.index() + 1);
+    this.moveTo(target);
   }
 
   previous(): void {
-    this.go(this.index() - 1);
+    this.moveTo(retreat(this.slides(), this.position()));
   }
 
   go(index: number): void {
-    const target = Math.min(Math.max(index, 0), this.total() - 1);
-    if (target === this.index()) return;
+    const slide = Math.min(Math.max(index, 0), this.total() - 1);
+    if (slide === this.index()) return;
 
-    this.direction.set(target > this.index() ? 'forward' : 'backward');
-    this.index.set(target);
+    this.moveTo({ slide, step: 0 });
+  }
+
+  private moveTo(target: DeckPosition): void {
+    const from = this.index();
+    if (target.slide !== from) {
+      this.direction.set(target.slide > from ? 'forward' : 'backward');
+    }
+    this.position.set(target);
   }
 
   protected onKeydown(event: KeyboardEvent): void {

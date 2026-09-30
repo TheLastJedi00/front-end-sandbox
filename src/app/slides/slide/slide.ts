@@ -30,8 +30,15 @@ import { SlideDefinition } from '../slide-definitions';
 
       @if (slide().points; as points) {
         <ul class="points">
+          <!-- Os pontos esperam o apresentador: um por etapa. O espaco deles ja
+               fica reservado para o slide nao pular quando o proximo aparece. -->
           @for (point of points; track point.label; let j = $index) {
-            <li class="point enter" [style.--i]="3 + j" [style.--accent]="point.accent ?? accent()">
+            <li
+              class="point"
+              [class.point--shown]="j < step()"
+              [attr.aria-hidden]="j < step() ? null : 'true'"
+              [style.--accent]="point.accent ?? accent()"
+            >
               <span class="label">{{ point.label }}</span>
               <strong class="text">{{ point.text }}</strong>
               @if (point.code) {
@@ -45,9 +52,9 @@ import { SlideDefinition } from '../slide-definitions';
       @if (slide().code; as code) {
         <app-code-listing
           class="enter"
-          [style.--i]="codeOrder()"
+          [style.--i]="codeOrder"
           [code]="code"
-          [startDelay]="codeDelay()"
+          [startDelay]="codeDelay"
         />
       }
     </article>
@@ -157,6 +164,23 @@ import { SlideDefinition } from '../slide-definitions';
       border-block-start: 3px solid var(--accent);
       border-radius: var(--radius-lg);
       background: var(--surface-panel);
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .point--shown {
+      opacity: 1;
+      visibility: visible;
+      animation: pop 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      box-shadow: 0 1rem 2.5rem -1.5rem var(--accent);
+    }
+
+    @keyframes pop {
+      from {
+        opacity: 0;
+        transform: translateY(1rem) scale(0.9);
+        filter: blur(4px);
+      }
     }
 
     .label {
@@ -185,12 +209,14 @@ import { SlideDefinition } from '../slide-definitions';
 })
 export class Slide {
   readonly slide = input.required<SlideDefinition>();
+  /** Quantas etapas ja foram reveladas (ver `deck-navigation`). */
+  readonly step = input(0);
 
   protected readonly accent = computed(() => this.slide().accent ?? 'var(--state-hint)');
   protected readonly titleWords = computed(() => this.slide().title.split(' '));
 
-  /** O codigo entra depois do texto e dos pontos. */
-  protected readonly codeOrder = computed(() => 3 + (this.slide().points?.length ?? 0));
+  /** O codigo entra logo depois do texto; os pontos esperam as etapas. */
+  protected readonly codeOrder = 3;
   /** A digitacao comeca quando a janela do codigo ja terminou de subir. */
-  protected readonly codeDelay = computed(() => 120 + this.codeOrder() * 110 + 280);
+  protected readonly codeDelay = 120 + this.codeOrder * 110 + 280;
 }
