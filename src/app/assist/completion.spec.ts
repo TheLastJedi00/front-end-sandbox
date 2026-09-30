@@ -31,9 +31,45 @@ describe('completionsAt', () => {
     expect(edit.text.slice(0, edit.caret)).toBe('<sky><ball>');
   });
 
-  it('nao fecha a tag quando a palavra nao vem de um <', () => {
-    const [suggestion] = completionsAt({ text: 'ba', caret: 2, file: 'html' });
+  it('escreve a tag inteira quando o aluno digita so o nome, sem o <', () => {
+    const [suggestion] = completionsAt({ text: '<sky>\n    ba', caret: 12, file: 'html' });
+    const edit = applyCompletion('<sky>\n    ba', suggestion);
 
+    expect(edit.text).toBe('<sky>\n    <ball></ball>');
+    expect(edit.text.slice(0, edit.caret)).toBe('<sky>\n    <ball>');
+  });
+
+  it('completa o fechamento com o >', () => {
+    const text = '<sky><ball></ball></sk';
+    const [suggestion] = completionsAt({ text, caret: text.length, file: 'html' });
+    const edit = applyCompletion(text, suggestion);
+
+    expect(suggestion.label).toBe('</sky>');
+    expect(edit.text).toBe('<sky><ball></ball></sky>');
+    expect(edit.caret).toBe(edit.text.length);
+  });
+
+  it('nao duplica o > que ja esta depois do cursor na abertura', () => {
+    const [suggestion] = completionsAt({ text: '<gr></ground>', caret: 3, file: 'html' });
+    const edit = applyCompletion('<gr></ground>', suggestion);
+
+    expect(edit.text).toBe('<ground></ground>');
+    // O cursor pula o > que ja existia.
+    expect(edit.text.slice(0, edit.caret)).toBe('<ground>');
+  });
+
+  it('nao duplica o > que ja esta depois do cursor no fechamento', () => {
+    const [suggestion] = completionsAt({ text: '<ball></ba>', caret: 10, file: 'html' });
+    const edit = applyCompletion('<ball></ba>', suggestion);
+
+    expect(edit.text).toBe('<ball></ball>');
+    expect(edit.caret).toBe(edit.text.length);
+  });
+
+  it('mantem as sugestoes do CSS sem os sinais de tag', () => {
+    const [suggestion] = completionsAt({ text: 'ba', caret: 2, file: 'css' });
+
+    expect(suggestion.label).toBe('ball');
     expect(suggestion.insert).toBe('ball');
   });
 
