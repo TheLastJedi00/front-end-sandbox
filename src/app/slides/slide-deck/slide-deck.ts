@@ -322,7 +322,7 @@ const SWIPE_MIN = 48;
       clip-path: inset(50%);
     }
 
-    @media (max-inline-size: 600px) {
+    @media (max-width: 600px) {
       .nav {
         padding: var(--space-3) var(--space-4);
       }

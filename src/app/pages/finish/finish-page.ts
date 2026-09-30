@@ -122,7 +122,7 @@ import { FIRST_LEVEL, LEVELS } from '../../levels/level-definitions';
       color: var(--text-inverse);
     }
 
-    @media (max-inline-size: 600px) {
+    @media (max-width: 600px) {
       .item {
         grid-template-columns: 1fr;
         gap: var(--space-1);

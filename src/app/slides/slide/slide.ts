@@ -96,7 +96,7 @@ import { SlideDefinition } from '../slide-definitions';
       display: none;
     }
 
-    @media (min-inline-size: 900px) {
+    @media (min-width: 900px) {
       .visuals--pair {
         grid-template-columns: 3fr 2fr;
         align-items: center;

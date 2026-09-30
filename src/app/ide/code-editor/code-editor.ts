@@ -317,7 +317,7 @@ interface CaretPoint {
       outline-offset: -1px;
     }
 
-    @media (min-inline-size: 1600px) {
+    @media (min-width: 1600px) {
       :host {
         font-size: var(--text-code-projector);
       }

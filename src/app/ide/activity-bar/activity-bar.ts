@@ -35,7 +35,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
       color: var(--text-primary);
     }
 
-    @media (max-inline-size: 900px) {
+    @media (max-width: 900px) {
       :host {
         display: none;
       }
