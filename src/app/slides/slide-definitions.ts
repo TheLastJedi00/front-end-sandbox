@@ -16,14 +16,50 @@ export interface SlidePoint {
   readonly code?: string;
 }
 
+/** Um trecho do codigo com nome: "abertura", "seletor", "condicao"... */
+export interface AnatomyPart {
+  /** Linha do trecho, contando do zero. */
+  readonly line: number;
+  /** O trecho exatamente como esta escrito na linha. */
+  readonly text: string;
+  /** Qual ocorrencia de `text` na linha, quando ele se repete. Padrao: a primeira. */
+  readonly occurrence?: number;
+  readonly label: string;
+  /** Explicacao mostrada quando e a vez desta parte. */
+  readonly note: string;
+}
+
+/**
+ * Codigo desmontado em partes. Cada parte e uma etapa do slide: o apresentador
+ * avanca e a proxima parte acende, com o nome e a explicacao dela.
+ */
+export interface SlideAnatomy {
+  readonly caption?: string;
+  readonly language: SourceFileId;
+  readonly lines: readonly string[];
+  /** Na ordem em que serao explicadas — nao precisa ser a ordem do texto. */
+  readonly parts: readonly AnatomyPart[];
+}
+
+/** Um elemento e o que esta dentro dele. */
+export interface TreeNode {
+  readonly name: string;
+  readonly children?: readonly TreeNode[];
+}
+
 export interface SlideDefinition {
   readonly id: string;
   /** Rotulo pequeno acima do titulo. */
   readonly eyebrow?: string;
   readonly title: string;
   readonly lead?: string;
+  /** Revelados um por etapa. */
   readonly points?: readonly SlidePoint[];
   readonly code?: SlideCode;
+  /** Revelada uma parte por etapa, depois dos pontos. */
+  readonly anatomy?: SlideAnatomy;
+  /** Caixas aninhadas ao lado do codigo: quem esta dentro de quem. */
+  readonly tree?: TreeNode;
   readonly accent?: string;
 }
 
