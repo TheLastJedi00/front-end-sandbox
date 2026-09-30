@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { CodeAnatomy } from '../code-anatomy/code-anatomy';
 import { CodeListing } from '../code-listing/code-listing';
 import { SlideDefinition } from '../slide-definitions';
 
@@ -9,7 +10,7 @@ import { SlideDefinition } from '../slide-definitions';
  */
 @Component({
   selector: 'app-slide',
-  imports: [CodeListing],
+  imports: [CodeListing, CodeAnatomy],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'slide', '[attr.data-slide]': 'slide().id' },
   template: `
@@ -55,6 +56,15 @@ import { SlideDefinition } from '../slide-definitions';
           [style.--i]="codeOrder"
           [code]="code"
           [startDelay]="codeDelay"
+        />
+      }
+
+      @if (slide().anatomy; as anatomy) {
+        <app-code-anatomy
+          class="enter"
+          [style.--i]="codeOrder"
+          [anatomy]="anatomy"
+          [step]="anatomyStep()"
         />
       }
     </article>
@@ -214,6 +224,10 @@ export class Slide {
 
   protected readonly accent = computed(() => this.slide().accent ?? 'var(--state-hint)');
   protected readonly titleWords = computed(() => this.slide().title.split(' '));
+  /** As etapas da anatomia vem depois das dos pontos. */
+  protected readonly anatomyStep = computed(() =>
+    Math.max(0, this.step() - (this.slide().points?.length ?? 0)),
+  );
 
   /** O codigo entra logo depois do texto; os pontos esperam as etapas. */
   protected readonly codeOrder = 3;
