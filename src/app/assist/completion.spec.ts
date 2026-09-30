@@ -16,10 +16,10 @@ describe('completionsAt', () => {
     expect(completionsAt({ text: '<sky>\n', caret: 6, file: 'html' })).toEqual([]);
   });
 
-  it('sugere as tags do jogo pelo prefixo', () => {
+  it('sugere as tags do jogo pelo prefixo, mostrando os sinais da tag', () => {
     const suggestions = completionsAt({ text: '<b', caret: 2, file: 'html' });
 
-    expect(suggestions.map((s) => s.label)).toEqual(['ball']);
+    expect(suggestions.map((s) => s.label)).toEqual(['<ball>']);
   });
 
   it('fecha a tag quando a sugestao vem depois de <', () => {

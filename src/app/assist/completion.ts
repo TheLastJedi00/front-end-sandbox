@@ -13,6 +13,7 @@ export interface CompletionContext {
 }
 
 export interface Completion {
+  /** Como a sugestao aparece na lista — no HTML, ja com os sinais da tag. */
   readonly label: string;
   readonly detail: string;
   readonly kind: CompletionKind;
@@ -22,6 +23,15 @@ export interface Completion {
   readonly to: number;
   /** Posicao absoluta do cursor depois de aceitar. */
   readonly caret: number;
+}
+
+/** O que aceitar a sugestao faz, antes de virar posicoes absolutas. */
+interface PlannedEdit {
+  readonly label: string;
+  readonly insert: string;
+  readonly from: number;
+  /** Onde o cursor para, contado a partir de `from`. */
+  readonly caretOffset: number;
 }
 
 export interface TextEdit {
@@ -52,17 +62,18 @@ export function completionsAt({ text, caret, file }: CompletionContext): readonl
       return label.startsWith(typed) && label !== typed;
     })
     .map((entry) => {
-      const edit =
+      const edit: PlannedEdit =
         file === 'html'
           ? tagEdit(entry.label, text, start, caret)
           : {
+              label: entry.label,
               insert: entry.insert,
               caretOffset: entry.caretOffset ?? entry.insert.length,
               from: start,
             };
 
       return {
-        label: entry.label,
+        label: edit.label,
         detail: entry.detail,
         kind: entry.kind,
         insert: edit.insert,
@@ -89,24 +100,26 @@ function tagEdit(
   text: string,
   start: number,
   caret: number,
-): { insert: string; caretOffset: number; from: number } {
+): PlannedEdit {
   const hasGt = text[caret] === '>';
 
   if (text.slice(start - 2, start) === '</') {
     return {
+      label: `</${name}>`,
       insert: hasGt ? name : `${name}>`,
       caretOffset: name.length + 1,
       from: start,
     };
   }
 
+  const label = `<${name}>`;
   const from = text[start - 1] === '<' ? start - 1 : start;
   if (hasGt) {
     // `<ba|>`: o aluno esta corrigindo o nome de uma tag que ja existe.
-    return { insert: `<${name}`, caretOffset: name.length + 2, from };
+    return { label, insert: `<${name}`, caretOffset: name.length + 2, from };
   }
 
-  return { insert: `<${name}></${name}>`, caretOffset: name.length + 2, from };
+  return { label, insert: `<${name}></${name}>`, caretOffset: name.length + 2, from };
 }
 
 export function applyCompletion(text: string, completion: Completion): TextEdit {
