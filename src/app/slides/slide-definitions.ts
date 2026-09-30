@@ -139,6 +139,101 @@ const HTML_SEQUENCE: readonly SlideDefinition[] = [
       lines: ['<sky>', '    <ball></ball>', '</sky>', '', '<!-- a bola está dentro do céu -->'],
     },
   },
+  {
+    id: 'html-anatomia-tag',
+    eyebrow: 'sintaxe · a tag',
+    title: 'Uma tag, peça por peça.',
+    lead: 'Todo elemento do HTML é escrito do mesmo jeito. Avance para ver cada parte.',
+    accent: HTML_ACCENT,
+    anatomy: {
+      caption: 'index.html',
+      language: 'html',
+      lines: ['<ball></ball>'],
+      parts: [
+        {
+          line: 0,
+          text: '<',
+          label: 'começa a tag',
+          note: 'O sinal de menor avisa o navegador: o que vem agora é o nome de um elemento.',
+        },
+        {
+          line: 0,
+          text: 'ball',
+          label: 'nome',
+          note: 'O nome diz qual elemento é. No nosso jogo existem três: sky, ball e ground.',
+        },
+        {
+          line: 0,
+          text: '>',
+          label: 'termina a tag',
+          note: 'O sinal de maior fecha o nome. Juntos, <ball> é a abertura: a bola começa aqui.',
+        },
+        {
+          line: 0,
+          text: '</ball>',
+          label: 'fechamento',
+          note: 'O mesmo nome, com uma barra depois do <. Aqui a bola termina.',
+        },
+      ],
+    },
+  },
+  {
+    id: 'html-vazio-conteudo',
+    eyebrow: 'sintaxe · o que vai no meio',
+    title: 'Entre a abertura e o fechamento.',
+    lead: 'O espaço entre <ball> e </ball> é o lado de dentro do elemento.',
+    accent: HTML_ACCENT,
+    points: [
+      {
+        label: 'vazio',
+        text: 'Nada no meio: a bola existe, mas não tem nada dentro dela.',
+        code: '<ball></ball>',
+      },
+      {
+        label: 'com conteúdo',
+        text: 'A bola escrita no meio do céu fica dentro do céu.',
+        code: '<sky><ball></ball></sky>',
+      },
+    ],
+  },
+  {
+    id: 'html-aninhamento',
+    eyebrow: 'sintaxe · dentro de quem',
+    title: 'O código vira caixas dentro de caixas.',
+    lead:
+      'Os espaços no começo da linha não mudam nada para o navegador — eles só ajudam a gente a ver quem está dentro de quem.',
+    accent: HTML_ACCENT,
+    code: {
+      caption: 'index.html',
+      language: 'html',
+      lines: ['<sky>', '    <ball></ball>', '    <ground></ground>', '</sky>'],
+    },
+    tree: { name: 'sky', children: [{ name: 'ball' }, { name: 'ground' }] },
+  },
+  {
+    id: 'html-erros',
+    eyebrow: 'sintaxe · cuidado',
+    title: 'Três jeitos de errar uma tag.',
+    lead: 'Se o painel de problemas reclamar, quase sempre é um destes.',
+    accent: HTML_ACCENT,
+    points: [
+      {
+        label: 'esqueceu a barra',
+        text: 'Sem a barra, o navegador acha que é outra bola abrindo.',
+        code: '<ball><ball>',
+      },
+      {
+        label: 'fechou fora',
+        text: 'Escrita depois de </sky>, a bola fica fora do céu.',
+        code: '<sky></sky><ball></ball>',
+      },
+      {
+        label: 'nome inventado',
+        text: 'Só existem sky, ball e ground. Outro nome não vira nada.',
+        code: '<star></star>',
+      },
+    ],
+  },
 ];
 
 /** Fase 2: o que e CSS, como uma regra e escrita e como a animacao funciona. */
