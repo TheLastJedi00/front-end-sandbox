@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { highlight, Token } from '../../ide/code-editor/highlight';
 import { CodeAnatomy } from '../code-anatomy/code-anatomy';
 import { CodeListing } from '../code-listing/code-listing';
 import { ElementTree } from '../element-tree/element-tree';
@@ -43,8 +44,12 @@ import { SlideDefinition } from '../slide-definitions';
             >
               <span class="label">{{ point.label }}</span>
               <strong class="text">{{ point.text }}</strong>
-              @if (point.code) {
-                <code class="inline-code">{{ point.code }}</code>
+              @if (pointTokens()[j]; as tokens) {
+                <code class="inline-code"
+                  >@for (token of tokens; track $index) {<span [attr.class]="'tk--' + token.kind">{{
+                    token.text
+                  }}</span>}</code
+                >
               }
             </li>
           }
@@ -249,6 +254,15 @@ export class Slide {
 
   protected readonly accent = computed(() => this.slide().accent ?? 'var(--state-hint)');
   protected readonly titleWords = computed(() => this.slide().title.split(' '));
+  /** O codigo de cada ponto ja com o realce da IDE (null quando nao tem codigo). */
+  protected readonly pointTokens = computed(() =>
+    (this.slide().points ?? []).map((point): readonly Token[] | null => {
+      if (!point.code) return null;
+      return point.language
+        ? highlight(point.code, point.language)
+        : [{ text: point.code, kind: 'plain' }];
+    }),
+  );
   /** As etapas da anatomia vem depois das dos pontos. */
   protected readonly anatomyStep = computed(() =>
     Math.max(0, this.step() - (this.slide().points?.length ?? 0)),

@@ -14,6 +14,8 @@ export interface SlidePoint {
   /** Cor de destaque do item; usa a cor do token quando ausente. */
   readonly accent?: string;
   readonly code?: string;
+  /** Linguagem do realce de `code`; sem ela, o codigo aparece sem cores. */
+  readonly language?: SourceFileId;
 }
 
 /** Um trecho do codigo com nome: "abertura", "seletor", "condicao"... */
@@ -68,8 +70,9 @@ const CSS_ACCENT = '#4aa3ff';
 const JS_ACCENT = '#f0db4f';
 
 /**
- * Abertura da apresentacao. Quatro slides e o limite do que cabe antes de a
- * turma querer ver algo acontecer na tela.
+ * Abertura da apresentacao: o que e front-end e o papel de cada linguagem.
+ * Curta, porque a turma quer ver algo acontecer na tela; a sintaxe fica para
+ * a sequencia que abre cada fase.
  */
 export const OPENING_DECK: readonly SlideDefinition[] = [
   {
@@ -88,18 +91,21 @@ export const OPENING_DECK: readonly SlideDefinition[] = [
         label: 'HTML',
         text: 'Cria as coisas e diz quem fica dentro de quem.',
         code: '<ball></ball>',
+        language: 'html',
         accent: HTML_ACCENT,
       },
       {
         label: 'CSS',
         text: 'Dá cor, tamanho e movimento ao que já existe.',
         code: 'ball { color: red }',
+        language: 'css',
         accent: CSS_ACCENT,
       },
       {
         label: 'JavaScript',
         text: 'Reage ao jogador e muda o jogo enquanto ele roda.',
         code: 'if(key("D")) { avancar() }',
+        language: 'js',
         accent: JS_ACCENT,
       },
     ],
@@ -119,8 +125,21 @@ export const OPENING_DECK: readonly SlideDefinition[] = [
     id: 'como-funciona',
     eyebrow: 'o que vem agora',
     title: 'Você escreve à esquerda, o jogo responde à direita.',
-    lead:
-      'São três fases, uma por linguagem. A cada letra digitada o resultado é redesenhado ao lado — e a fase só termina quando o jogo faz o que foi pedido.',
+    lead: 'São três fases, uma por linguagem. Cada fase tem três momentos:',
+    points: [
+      {
+        label: 'antes',
+        text: 'Alguns slides mostram a sintaxe da linguagem, peça por peça.',
+      },
+      {
+        label: 'durante',
+        text: 'A cada letra digitada, o jogo é redesenhado ao lado do código.',
+      },
+      {
+        label: 'no fim',
+        text: 'A fase só termina quando o jogo faz o que foi pedido.',
+      },
+    ],
   },
 ];
 
@@ -188,11 +207,13 @@ const HTML_SEQUENCE: readonly SlideDefinition[] = [
         label: 'vazio',
         text: 'Nada no meio: a bola existe, mas não tem nada dentro dela.',
         code: '<ball></ball>',
+        language: 'html',
       },
       {
         label: 'com conteúdo',
         text: 'A bola escrita no meio do céu fica dentro do céu.',
         code: '<sky><ball></ball></sky>',
+        language: 'html',
       },
     ],
   },
@@ -221,16 +242,19 @@ const HTML_SEQUENCE: readonly SlideDefinition[] = [
         label: 'esqueceu a barra',
         text: 'Sem a barra, o navegador acha que é outra bola abrindo.',
         code: '<ball><ball>',
+        language: 'html',
       },
       {
         label: 'fechou fora',
         text: 'Escrita depois de </sky>, a bola fica fora do céu.',
         code: '<sky></sky><ball></ball>',
+        language: 'html',
       },
       {
         label: 'nome inventado',
         text: 'Só existem sky, ball e ground. Outro nome não vira nada.',
         code: '<star></star>',
+        language: 'html',
       },
     ],
   },
@@ -318,12 +342,14 @@ const CSS_SEQUENCE: readonly SlideDefinition[] = [
         label: 'no HTML',
         text: 'A bola foi criada na fase 1.',
         code: '<ball></ball>',
+        language: 'html',
         accent: HTML_ACCENT,
       },
       {
         label: 'no CSS',
         text: 'O seletor ball encontra a bola pelo nome.',
         code: 'ball { color: red; }',
+        language: 'css',
         accent: CSS_ACCENT,
       },
       {
@@ -443,16 +469,19 @@ const CSS_SEQUENCE: readonly SlideDefinition[] = [
         label: 'sem dois-pontos',
         text: 'Sem os dois-pontos, o navegador não sabe onde acaba a propriedade.',
         code: 'color red;',
+        language: 'css',
       },
       {
         label: 'seletor com sinais',
         text: 'No CSS o seletor é só o nome, sem < e >.',
         code: '<ball> { color: red; }',
+        language: 'css',
       },
       {
         label: 'nome trocado',
         text: 'A animação se chama jump; aplicar outro nome não faz nada.',
         code: 'animation: pulo',
+        language: 'css',
       },
     ],
   },
@@ -541,12 +570,14 @@ const JS_SEQUENCE: readonly SlideDefinition[] = [
         label: 'verdadeiro',
         text: 'Com a tecla D apertada, o que está entre as chaves acontece: a bola avança.',
         code: 'key("D") → verdadeiro',
+        language: 'js',
         accent: 'var(--state-success)',
       },
       {
         label: 'falso',
         text: 'Com a tecla solta, o bloco é pulado. Nada acontece, e está tudo certo.',
         code: 'key("D") → falso',
+        language: 'js',
         accent: 'var(--state-error)',
       },
       {
@@ -633,16 +664,19 @@ const JS_SEQUENCE: readonly SlideDefinition[] = [
         label: 'tecla sem aspas',
         text: 'O nome da tecla é um texto: vai entre aspas.',
         code: 'if(key(D)){',
+        language: 'js',
       },
       {
         label: 'ação sem parênteses',
         text: 'Sem os parênteses, a ação não é executada.',
         code: 'avancar',
+        language: 'js',
       },
       {
         label: 'chave esquecida',
         text: 'Toda chave que abre precisa fechar, senão o resto do código entra no if.',
         code: 'if(key("A")){ recuar()',
+        language: 'js',
       },
     ],
   },
