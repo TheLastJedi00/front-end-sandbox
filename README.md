@@ -17,7 +17,7 @@ Outros comandos:
 
 ```bash
 npm run build    # build de produção (com SSR/prerender)
-npm test         # testes unitários (Chrome) — 81 testes
+npm test         # testes unitários (Chrome) — 106 testes
 ```
 
 ## As três fases
@@ -41,15 +41,42 @@ Cada fase é conferida por **equivalência semântica**, nunca por comparação 
 quebras de linha e a ordem das regras ficam por conta do aluno. Só as cores do enunciado
 (`blue`, `red`, `green`) são exigidas exatamente.
 
-Rotas: `/` (deck de abertura), `/sandbox/1..3` (as fases, cada uma abrindo com o slide da sua
-ferramenta) e `/fim` (fechamento).
+Rotas: `/` (deck de abertura), `/sandbox/1..3` (as fases, cada uma abrindo com a sequência de
+slides da sua ferramenta) e `/fim` (fechamento).
+
+## A apresentação
+
+A abertura e cada fase são decks de slides animados, só com CSS:
+
+- **Transição com direção** — avançar empurra o slide para a esquerda, voltar para a direita.
+- **Entrada em cascata** — o título entra palavra por palavra e os blocos, um depois do outro.
+- **Código que se digita** — os blocos de código aparecem linha a linha, já com o mesmo realce
+  da IDE.
+- **Etapas** — cards e partes do código esperam o apresentador: `Avançar` revela a próxima
+  etapa antes de trocar de slide, e `Voltar` desfaz a última. A barrinha do slide atual enche
+  a cada etapa.
+- **Fundo vivo** na cor da linguagem (laranja no HTML, azul no CSS, amarelo no JS).
+
+Antes de cada fase, uma **sequência de sintaxe** desmonta o código parte por parte — cada parte
+acende com o nome dela ("seletor", "condição"…) e a explicação aparece embaixo:
+
+| Fase | Slides | O que reforça |
+| --- | --- | --- |
+| 1 — HTML | 5 | anatomia da tag, o que vai entre abertura e fechamento, caixas dentro de caixas, erros comuns |
+| 2 — CSS | 7 | anatomia da regra (seletor, propriedade, valor), seletor ↔ tag, `@animation`, aplicar, erros comuns |
+| 3 — JS | 6 | anatomia do `if`, verdadeiro ou falso, vários `if`, chamar uma ação, erros comuns |
+
+Com `prefers-reduced-motion` ligado no sistema, cada slide já aparece completo, sem etapas.
 
 ## Roteiro de 15 minutos
 
+> As sequências de sintaxe cresceram na spec 003 e ainda não têm limite de slides: o encaixe nos
+> 15 minutos será revisto. Enquanto isso, `Pular` (ou `Esc`) encerra qualquer sequência.
+
 | Tempo | O quê |
 | --- | --- |
-| 0–2 min | **Deck de abertura** (4 slides): o que é front-end e o papel de cada linguagem. Setas, espaço ou swipe avançam; `Esc` pula |
-| 2–6 min | **Fase 1 — HTML**. O slide da fase abre sozinho; depois um voluntário escreve as etiquetas. Erre de propósito (`<star>`) e leia o painel de problemas em voz alta |
+| 0–2 min | **Deck de abertura** (4 slides): o que é front-end e o papel de cada linguagem. Setas, espaço, `Enter` ou swipe avançam; `Esc` pula |
+| 2–6 min | **Fase 1 — HTML**. A sequência de sintaxe abre sozinha; depois um voluntário escreve as etiquetas. Erre de propósito (`<star>`) e leia o painel de problemas em voz alta |
 | 6–10 min | **Fase 2 — CSS**. Pinte primeiro, anime depois. Pergunte "o que muda entre o início e o meio?" antes de escrever |
 | 10–14 min | **Fase 3 — JavaScript**. Use os botões na tela (ou o teclado, clicando antes no palco); deixe um aluno chegar à bandeira |
 | 14–15 min | Tela final: toda página da internet é feita exatamente assim |
@@ -61,7 +88,9 @@ Quatro recursos ajudam o aluno a não travar na frente da turma:
 - **Cards de sintaxe** — abrem com a fase, antes de qualquer digitação: o que a sintaxe faz, um
   exemplo mínimo e o erro comum. Somem na primeira tecla (ou num toque) e voltam pelo botão
   **Sintaxe**.
-- **Autocomplete** — sugestões limitadas ao vocabulário da fase, ancoradas no cursor. Setas
+- **Autocomplete** — sugestões limitadas ao vocabulário da fase, ancoradas no cursor. No HTML a
+  sugestão é sempre a tag inteira: `ba` vira `<ball></ball>` com o cursor no meio, e `</ba`
+  vira `</ball>`. Setas
   navegam, `Enter`/`Tab` aceita, `Esc` fecha, e um toque também aceita. A lista abre acima do
   cursor quando não há espaço abaixo (teclado virtual do tablet).
 - **Fechamento automático** — `<ball>` ganha o seu `</ball>`, `{` ganha a sua chave.
@@ -90,8 +119,9 @@ src/app/
     services/        progresso, código e slides já vistos, salvos no navegador
   assist/            TypeScript puro: vocabulary, completion, ghost-suggestion,
                      syntax-cards — a assistência da IDE, testável sem DOM
-  slides/            deck de apresentação: slide, slide-deck, concept-overlay
-                     e slide-definitions.ts (abertura + slide de cada fase)
+  slides/            deck de apresentação: slide, slide-deck, concept-overlay,
+                     code-listing, code-anatomy, element-tree, deck-navigation
+                     e slide-definitions.ts (abertura + sequência de cada fase)
   engine/            TypeScript puro, sem Angular — é onde estão os testes
     parsers/         html-parser, css-parser, js-parser
     runtime/         scene, renderer, animator, input, game-loop
@@ -133,7 +163,7 @@ Para ir além:
 | Mudar as cores com nome | `NAMED_COLORS` em `engine/runtime/scene.ts` |
 | Ajustar velocidade, altura do pulo ou o alvo | `game-loop.ts`, `renderer.ts`, `core/models/game-state.ts` |
 | Criar um critério de conclusão | `LevelCheckId` em `core/models/validation.ts` + `CHECKS` no validador |
-| Mudar o texto dos slides | `src/app/slides/slide-definitions.ts` |
+| Mudar o texto dos slides ou as partes desmontadas | `src/app/slides/slide-definitions.ts` — o teste `slide-definitions.spec.ts` quebra se uma parte não existir no código |
 | Mudar os cards de sintaxe | `src/app/assist/syntax-cards.ts` |
 | Mudar o que o autocomplete oferece | `src/app/assist/vocabulary.ts` |
 | Mudar o que a sugestão de 5 s propõe | `STEPS` em `src/app/assist/ghost-suggestion.ts` |
