@@ -45,7 +45,6 @@ export function completionsAt({ text, caret, file }: CompletionContext): readonl
   if (!word) return [];
 
   const typed = word.toLowerCase();
-  const insideTag = file === 'html' && text[start - 1] === '<';
 
   return vocabularyFor(file)
     .filter((entry) => {
@@ -53,23 +52,61 @@ export function completionsAt({ text, caret, file }: CompletionContext): readonl
       return label.startsWith(typed) && label !== typed;
     })
     .map((entry) => {
-      // Dentro de `<`, completar a tag ja escreve o fechamento e deixa o cursor
-      // no meio — e ali que o aluno vai escrever o que fica dentro dela.
-      const insert = insideTag ? `${entry.label}></${entry.label}>` : entry.insert;
-      const caretOffset = insideTag
-        ? entry.label.length + 1
-        : (entry.caretOffset ?? insert.length);
+      const edit =
+        file === 'html'
+          ? tagEdit(entry.label, text, start, caret)
+          : {
+              insert: entry.insert,
+              caretOffset: entry.caretOffset ?? entry.insert.length,
+              from: start,
+            };
 
       return {
         label: entry.label,
         detail: entry.detail,
         kind: entry.kind,
-        insert,
-        from: start,
+        insert: edit.insert,
+        from: edit.from,
         to: caret,
-        caret: start + caretOffset,
+        caret: edit.from + edit.caretOffset,
       };
     });
+}
+
+/**
+ * No HTML a sugestao e sempre uma tag inteira, com os sinais: quem esta
+ * aprendendo digita `ball` sem o `<`, e aceitar so o nome deixava o codigo
+ * quebrado do mesmo jeito.
+ *
+ * - `ba`   → `<ball></ball>`, cursor no meio (onde vai o que fica dentro)
+ * - `<ba`  → idem, reaproveitando o `<` ja digitado
+ * - `</ba` → `</ball>`, cursor depois do `>`
+ *
+ * Um `>` que ja esta logo depois do cursor e reaproveitado, nao duplicado.
+ */
+function tagEdit(
+  name: string,
+  text: string,
+  start: number,
+  caret: number,
+): { insert: string; caretOffset: number; from: number } {
+  const hasGt = text[caret] === '>';
+
+  if (text.slice(start - 2, start) === '</') {
+    return {
+      insert: hasGt ? name : `${name}>`,
+      caretOffset: name.length + 1,
+      from: start,
+    };
+  }
+
+  const from = text[start - 1] === '<' ? start - 1 : start;
+  if (hasGt) {
+    // `<ba|>`: o aluno esta corrigindo o nome de uma tag que ja existe.
+    return { insert: `<${name}`, caretOffset: name.length + 2, from };
+  }
+
+  return { insert: `<${name}></${name}>`, caretOffset: name.length + 2, from };
 }
 
 export function applyCompletion(text: string, completion: Completion): TextEdit {
