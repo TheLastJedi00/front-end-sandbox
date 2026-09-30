@@ -106,6 +106,14 @@ a {
   color: var(--state-hint);
 }
 
+/* Cor de destaque do deck. Registrada como <color> para o navegador conseguir
+   interpolar: trocar de slide faz o fundo mudar de cor aos poucos. */
+@property --deck-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #75beff;
+}
+
 /* Cores de token. Globais porque o editor e os slides usam o mesmo realce:
    o aluno ve no slide exatamente a cor que vai ver na IDE. */
 .tk--tag {

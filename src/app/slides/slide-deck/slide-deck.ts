@@ -20,8 +20,15 @@ const SWIPE_MIN = 48;
     '(document:keydown)': 'onKeydown($event)',
     '(pointerdown)': 'onPointerDown($event)',
     '(pointerup)': 'onPointerUp($event)',
+    '[style.--deck-accent]': 'current().accent ?? null',
   },
   template: `
+    <div class="ambient" aria-hidden="true">
+      <span class="glow glow--a"></span>
+      <span class="glow glow--b"></span>
+      <span class="grid"></span>
+    </div>
+
     <!-- Rastrear pelo id recria o slide a cada troca: a entrada roda de novo, e
          o slide que sai continua na tela ate terminar a animacao de saida. -->
     <div class="stage" [attr.data-direction]="direction()" (click)="onStageClick($event)">
@@ -72,9 +79,82 @@ const SWIPE_MIN = 48;
       grid-template-rows: 1fr auto;
       min-block-size: 100%;
       touch-action: pan-y;
+      transition: --deck-accent 900ms ease;
+    }
+
+    /* Fundo vivo, na cor da linguagem do slide. Fica atras de tudo e nunca
+       recebe clique. */
+    .ambient {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .glow {
+      position: absolute;
+      inline-size: 55vmax;
+      block-size: 55vmax;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--deck-accent) 38%, transparent) 0%,
+        transparent 65%
+      );
+      filter: blur(20px);
+    }
+
+    .glow--a {
+      inset-block-start: -30vmax;
+      inset-inline-start: -15vmax;
+      animation: drift-a 18s ease-in-out infinite alternate;
+    }
+
+    .glow--b {
+      inset-block-end: -35vmax;
+      inset-inline-end: -20vmax;
+      opacity: 0.7;
+      animation: drift-b 22s ease-in-out infinite alternate;
+    }
+
+    /* Uma grade discreta, como papel quadriculado de quem esta projetando. */
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(color-mix(in srgb, var(--deck-accent) 11%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--deck-accent) 11%, transparent) 1px, transparent 1px);
+      background-size: 3rem 3rem;
+      mask-image: radial-gradient(ellipse at 50% 40%, #000 0%, transparent 70%);
+      animation: grid-pan 30s linear infinite;
+    }
+
+    @keyframes drift-a {
+      to {
+        transform: translate(12vmax, 8vmax) scale(1.15);
+      }
+    }
+
+    @keyframes drift-b {
+      to {
+        transform: translate(-10vmax, -6vmax) scale(0.9);
+      }
+    }
+
+    @keyframes grid-pan {
+      to {
+        background-position: 3rem 3rem;
+      }
+    }
+
+    .stage,
+    .controls,
+    .skip {
+      z-index: 1;
     }
 
     .stage {
+      position: relative;
       display: grid;
       min-block-size: 0;
       perspective: 1200px;
