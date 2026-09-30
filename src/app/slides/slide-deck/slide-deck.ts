@@ -22,8 +22,12 @@ const SWIPE_MIN = 48;
     '(pointerup)': 'onPointerUp($event)',
   },
   template: `
-    <div class="stage" (click)="onStageClick($event)">
-      <app-slide [slide]="current()" />
+    <!-- Rastrear pelo id recria o slide a cada troca: a entrada roda de novo, e
+         o slide que sai continua na tela ate terminar a animacao de saida. -->
+    <div class="stage" [attr.data-direction]="direction()" (click)="onStageClick($event)">
+      @for (slide of shown(); track slide.id) {
+        <app-slide [slide]="slide" animate.enter="slide-enter" animate.leave="slide-leave" />
+      }
     </div>
 
     <footer class="controls">
@@ -73,6 +77,62 @@ const SWIPE_MIN = 48;
     .stage {
       display: grid;
       min-block-size: 0;
+      perspective: 1200px;
+      overflow: hidden;
+    }
+
+    /* O slide que sai e o que entra ocupam a mesma celula durante a troca. */
+    .stage > app-slide {
+      grid-area: 1 / 1;
+    }
+
+    .slide-enter {
+      animation: enter-from-right 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .slide-leave {
+      pointer-events: none;
+      animation: leave-to-left 320ms cubic-bezier(0.7, 0, 0.84, 0) both;
+    }
+
+    .stage[data-direction='backward'] .slide-enter {
+      animation-name: enter-from-left;
+    }
+
+    .stage[data-direction='backward'] .slide-leave {
+      animation-name: leave-to-right;
+    }
+
+    @keyframes enter-from-right {
+      from {
+        opacity: 0;
+        transform: translateX(8%) rotateY(-10deg) scale(0.96);
+        filter: blur(8px);
+      }
+    }
+
+    @keyframes enter-from-left {
+      from {
+        opacity: 0;
+        transform: translateX(-8%) rotateY(10deg) scale(0.96);
+        filter: blur(8px);
+      }
+    }
+
+    @keyframes leave-to-left {
+      to {
+        opacity: 0;
+        transform: translateX(-8%) rotateY(10deg) scale(0.96);
+        filter: blur(8px);
+      }
+    }
+
+    @keyframes leave-to-right {
+      to {
+        opacity: 0;
+        transform: translateX(8%) rotateY(-10deg) scale(0.96);
+        filter: blur(8px);
+      }
     }
 
     .controls {
@@ -169,6 +229,10 @@ export class SlideDeck {
   protected readonly current = computed(() => this.slides()[this.index()]);
   protected readonly isFirst = computed(() => this.index() === 0);
   protected readonly isLast = computed(() => this.index() >= this.total() - 1);
+  /** Lista de um item so: e o `track` dela que recria o slide a cada troca. */
+  protected readonly shown = computed(() => [this.current()]);
+  /** Para onde a apresentacao andou por ultimo — decide o lado da transicao. */
+  protected readonly direction = signal<'forward' | 'backward'>('forward');
 
   private pointerStartX: number | null = null;
   /** Um arrasto ja trocou o slide; o `click` que vem depois dele nao conta. */
@@ -179,15 +243,19 @@ export class SlideDeck {
       this.finish.emit();
       return;
     }
-    this.index.update((i) => i + 1);
+    this.go(this.index() + 1);
   }
 
   previous(): void {
-    this.index.update((i) => Math.max(0, i - 1));
+    this.go(this.index() - 1);
   }
 
   go(index: number): void {
-    this.index.set(Math.min(Math.max(index, 0), this.total() - 1));
+    const target = Math.min(Math.max(index, 0), this.total() - 1);
+    if (target === this.index()) return;
+
+    this.direction.set(target > this.index() ? 'forward' : 'backward');
+    this.index.set(target);
   }
 
   protected onKeydown(event: KeyboardEvent): void {

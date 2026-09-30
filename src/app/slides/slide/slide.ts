@@ -57,7 +57,6 @@ import { SlideDefinition } from '../slide-definitions';
       gap: var(--space-4);
       inline-size: 100%;
       max-inline-size: 56rem;
-      animation: slide-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
     }
 
     .eyebrow {
@@ -131,17 +130,6 @@ import { SlideDefinition } from '../slide-definitions';
       color: var(--text-primary);
       font-family: var(--font-mono);
       font-size: 0.875rem;
-    }
-
-    @keyframes slide-in {
-      from {
-        opacity: 0;
-        transform: translateY(1.25rem);
-      }
-      to {
-        opacity: 1;
-        transform: none;
-      }
     }
   `,
 })
