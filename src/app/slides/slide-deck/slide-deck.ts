@@ -84,14 +84,16 @@ const SWIPE_MIN = 48;
       </ol>
 
       <!-- Um botao so, com o texto trocando: o foco nao se perde no ultimo slide. -->
-      <button class="nav nav--primary" type="button" (click)="next()" #primary>
+      <button class="nav nav--primary" type="button" (click)="next()">
         {{ atEnd() ? finishLabel() : 'Avançar' }} <span aria-hidden="true">→</span>
       </button>
     </footer>
 
     <button class="skip" type="button" (click)="finish.emit()">{{ skipLabel() }}</button>
 
-    <p class="live" aria-live="polite">{{ current().title }}</p>
+    <!-- Titulo ao trocar de slide; cada ponto quando ele aparece. As partes da
+         anatomia tem o seu proprio anuncio, dentro do componente. -->
+    <p class="live" aria-live="polite">{{ announcement() }}</p>
   `,
   styles: `
     :host {
@@ -361,6 +363,16 @@ export class SlideDeck {
   protected readonly stepProgress = computed(() => {
     const steps = stepsOf(this.current());
     return steps === 0 ? 100 : (this.position().step / steps) * 100;
+  });
+  /** O que o leitor de tela diz depois de cada avanco. */
+  protected readonly announcement = computed(() => {
+    const { step } = this.position();
+    const slide = this.current();
+    if (step === 0) return slide.title;
+
+    const point = slide.points?.[step - 1];
+    // Passados os pontos, as etapas sao da anatomia, que se anuncia sozinha.
+    return point ? `${point.label}: ${point.text}` : '';
   });
   /** Lista de um item so: e o `track` dela que recria o slide a cada troca. */
   protected readonly shown = computed(() => [this.current()]);
