@@ -30,43 +30,43 @@ classes), lógica de navegação pura e testável, `OnPush`, signals, nenhuma de
 
 ## Fase 0 — Correção do autocomplete de tags
 
-- [ ] **T0.1** — `assist/completion`: no HTML, `ba` vira `<ball></ball>` e `</ba` vira `</ball>`, sem duplicar um `>` que já esteja depois do cursor.
-- [ ] **T0.2** — `assist/completion`: a lista mostra a tag como ela vai ficar (`<ball>`, `</ball>`).
-- [ ] **T0.3** — Testes de `completion` para os três casos da tabela do contexto e para o `>` já existente.
+- [x] **T0.1** — `assist/completion`: no HTML, `ba` vira `<ball></ball>` e `</ba` vira `</ball>`, sem duplicar um `>` que já esteja depois do cursor.
+- [x] **T0.2** — `assist/completion`: a lista mostra a tag como ela vai ficar (`<ball>`, `</ball>`).
+- [x] **T0.3** — Testes de `completion` para os três casos da tabela do contexto e para o `>` já existente.
 
 ## Fase 1 — Base visual do deck
 
-- [ ] **T1.1** — Cores de token globais em `styles.scss` e `highlightLines()` em `highlight.ts`, para slides e editor usarem o mesmo realce.
-- [ ] **T1.2** — `slides/code-listing`: bloco de código com realce, linhas reveladas uma a uma (efeito de digitação).
-- [ ] **T1.3** — `slides/slide-deck`: cada slide é recriado ao trocar (a entrada volta a rodar) e a transição tem direção — avançar sai pela esquerda, voltar pela direita.
-- [ ] **T1.4** — `slides/slide`: entrada escalonada de título, texto, cards e código.
-- [ ] **T1.5** — Fundo animado na cor da linguagem, com troca suave de cor entre slides (`@property`).
+- [x] **T1.1** — Cores de token globais em `styles.scss` e `highlightLines()` em `highlight.ts`, para slides e editor usarem o mesmo realce.
+- [x] **T1.2** — `slides/code-listing`: bloco de código com realce, linhas reveladas uma a uma (efeito de digitação).
+- [x] **T1.3** — `slides/slide-deck`: cada slide é recriado ao trocar (a entrada volta a rodar) e a transição tem direção — avançar sai pela esquerda, voltar pela direita.
+- [x] **T1.4** — `slides/slide`: entrada escalonada de título, texto, cards e código.
+- [x] **T1.5** — Fundo animado na cor da linguagem, com troca suave de cor entre slides (`@property`).
 
 ## Fase 2 — Etapas dentro do slide (builds)
 
-- [ ] **T2.1** — `slides/deck-navigation`: posição = slide + etapa; avançar revela a próxima etapa antes de trocar de slide; voltar vai ao slide anterior já completo. Com testes.
-- [ ] **T2.2** — `slides/slide-deck` + `slides/slide`: pontos (cards) revelados um por etapa; indicador de etapa no progresso.
-- [ ] **T2.3** — Com `prefers-reduced-motion`, todas as etapas já aparecem reveladas.
+- [x] **T2.1** — `slides/deck-navigation`: posição = slide + etapa; avançar revela a próxima etapa antes de trocar de slide; voltar desfaz a última etapa e, do começo de um slide, volta ao anterior já completo (ver **Q.4**). Com testes.
+- [x] **T2.2** — `slides/slide-deck` + `slides/slide`: pontos (cards) revelados um por etapa; indicador de etapa no progresso.
+- [x] **T2.3** — Com `prefers-reduced-motion`, todas as etapas já aparecem reveladas.
 
 ## Fase 3 — Componentes de sintaxe
 
-- [ ] **T3.1** — `slides/code-anatomy`: código dividido em partes rotuladas (ex.: "abertura", "seletor", "condição"); cada etapa destaca uma parte e mostra a explicação dela. Função de segmentação pura, com testes.
-- [ ] **T3.2** — `slides/element-tree`: caixas aninhadas que mostram quem está dentro de quem, montadas em sequência.
+- [x] **T3.1** — `slides/code-anatomy`: código dividido em partes rotuladas (ex.: "abertura", "seletor", "condição"); cada etapa destaca uma parte e mostra a explicação dela. Função de segmentação pura, com testes.
+- [x] **T3.2** — `slides/element-tree`: caixas aninhadas que mostram quem está dentro de quem, montadas em sequência.
 
 ## Fase 4 — Conteúdo
 
-- [ ] **T4.1** — `slides/concept-overlay`: vira um mini-deck; `CONCEPT_SLIDES` passa a ser uma sequência por fase.
-- [ ] **T4.2** — Sequência do **HTML**: conceito, anatomia da tag, elemento vazio vs. com conteúdo, aninhamento em árvore.
-- [ ] **T4.3** — Sequência do **CSS**: conceito, anatomia da regra, seletor ↔ tag do HTML, `@animation` e como aplicá-la.
-- [ ] **T4.4** — Sequência do **JavaScript**: conceito, anatomia do `if`, verdadeiro/falso, vários `if`, chamar uma ação.
-- [ ] **T4.5** — Abertura revisada com os novos componentes (realce, etapas).
+- [x] **T4.1** — `slides/concept-overlay`: vira um mini-deck; `CONCEPT_SLIDES` passa a ser uma sequência por fase.
+- [x] **T4.2** — Sequência do **HTML**: conceito, anatomia da tag, elemento vazio vs. com conteúdo, aninhamento em árvore.
+- [x] **T4.3** — Sequência do **CSS**: conceito, anatomia da regra, seletor ↔ tag do HTML, `@animation` e como aplicá-la.
+- [x] **T4.4** — Sequência do **JavaScript**: conceito, anatomia do `if`, verdadeiro/falso, vários `if`, chamar uma ação.
+- [x] **T4.5** — Abertura revisada com os novos componentes (realce, etapas).
 
 ## Fase 5 — Qualidade e entrega
 
-- [ ] **T5.1** — Acessibilidade: etapa atual anunciada (`aria-live`), rótulos da anatomia legíveis por leitor de tela, foco preservado no botão de avançar.
-- [ ] **T5.2** — Testar no navegador, rodando localmente: abertura, sequência de cada fase, etapas, transições e o autocomplete corrigido.
-- [ ] **T5.3** — Atualizar o `README.md`.
-- [ ] **T5.4** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
+- [x] **T5.1** — Acessibilidade: etapa atual anunciada (`aria-live`), rótulos da anatomia legíveis por leitor de tela, foco preservado no botão de avançar.
+- [x] **T5.2** — Testar no navegador, rodando localmente: abertura, sequência de cada fase, etapas, transições e o autocomplete corrigido.
+- [x] **T5.3** — Atualizar o `README.md`.
+- [x] **T5.4** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
 
 ---
 
@@ -76,3 +76,17 @@ classes), lógica de navegação pura e testável, `OnPush`, signals, nenhuma de
 
 - **Q.1 — Sem limite de slides por fase** por enquanto; o encaixe nos 15 minutos será revisto depois. ✅
 - **Q.2 — Etapas (builds):** "Avançar" revela a próxima parte do slide antes de trocar de slide. ✅
+
+**Decididas durante a execução (recomendação tomada, destacadas no PR):**
+
+- **Q.3 — Media queries que nunca funcionaram.** Seis regras usavam `@media (min/max-inline-size)`,
+  que não é media feature — nenhuma era aplicada. Corrigidas para `min/max-width`. Efeito visível
+  fora dos slides: abaixo de 900px a IDE passa a empilhar editor e preview (com altura mínima
+  para o editor), a barra de atividades some, o editor usa a fonte de projetor acima de 1600px e
+  a tela final ganha o layout de celular.
+- **Q.4 — Voltar desfaz a etapa**, como no PowerPoint, em vez de pular direto para o slide
+  anterior; do começo de um slide, o anterior volta já completo.
+- **Q.5 — Último caractere cortado.** Com `steps()` e `fill-mode: both`, o Chrome parava a
+  digitação no penúltimo degrau; a animação passou a usar `backwards`.
+- **Q.6 — Rótulo só na parte da vez.** Na anatomia, só a parte atual mostra o rótulo; as já
+  explicadas ficam sublinhadas. Rótulos de partes vizinhas curtas (`:` e `red`) se sobreporiam.
