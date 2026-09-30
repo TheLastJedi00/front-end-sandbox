@@ -312,44 +312,6 @@ interface CaretPoint {
       clip-path: inset(50%);
     }
 
-    .tk--tag {
-      color: var(--syntax-tag);
-    }
-    .tk--bracket {
-      color: var(--syntax-bracket);
-    }
-    .tk--selector {
-      color: var(--syntax-selector);
-    }
-    .tk--property {
-      color: var(--syntax-property);
-    }
-    .tk--value {
-      color: var(--syntax-value);
-    }
-    .tk--atrule {
-      color: var(--syntax-atrule);
-    }
-    .tk--keyword {
-      color: var(--syntax-keyword);
-    }
-    .tk--function {
-      color: var(--syntax-function);
-    }
-    .tk--string {
-      color: var(--syntax-string);
-    }
-    .tk--number {
-      color: var(--syntax-number);
-    }
-    .tk--comment {
-      color: var(--syntax-comment);
-      font-style: italic;
-    }
-    .tk--step {
-      color: var(--syntax-selector);
-    }
-
     .input:focus-visible {
       outline: 1px solid var(--focus-ring);
       outline-offset: -1px;

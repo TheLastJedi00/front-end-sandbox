@@ -106,6 +106,46 @@ a {
   color: var(--state-hint);
 }
 
+/* Cores de token. Globais porque o editor e os slides usam o mesmo realce:
+   o aluno ve no slide exatamente a cor que vai ver na IDE. */
+.tk--tag {
+  color: var(--syntax-tag);
+}
+.tk--bracket {
+  color: var(--syntax-bracket);
+}
+.tk--selector {
+  color: var(--syntax-selector);
+}
+.tk--property {
+  color: var(--syntax-property);
+}
+.tk--value {
+  color: var(--syntax-value);
+}
+.tk--atrule {
+  color: var(--syntax-atrule);
+}
+.tk--keyword {
+  color: var(--syntax-keyword);
+}
+.tk--function {
+  color: var(--syntax-function);
+}
+.tk--string {
+  color: var(--syntax-string);
+}
+.tk--number {
+  color: var(--syntax-number);
+}
+.tk--comment {
+  color: var(--syntax-comment);
+  font-style: italic;
+}
+.tk--step {
+  color: var(--syntax-selector);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
