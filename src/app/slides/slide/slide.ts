@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { CodeListing } from '../code-listing/code-listing';
 import { SlideDefinition } from '../slide-definitions';
 
 /**
@@ -8,6 +9,7 @@ import { SlideDefinition } from '../slide-definitions';
  */
 @Component({
   selector: 'app-slide',
+  imports: [CodeListing],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'slide', '[attr.data-slide]': 'slide().id' },
   template: `
@@ -36,13 +38,7 @@ import { SlideDefinition } from '../slide-definitions';
       }
 
       @if (slide().code; as code) {
-        <figure class="code">
-          @if (code.caption) {
-            <figcaption class="caption">{{ code.caption }}</figcaption>
-          }
-          <pre class="listing"><code>@for (line of code.lines; track $index) {{{ line }}
-}</code></pre>
-        </figure>
+        <app-code-listing [code]="code" [startDelay]="300" />
       }
     </article>
   `,
@@ -128,36 +124,13 @@ import { SlideDefinition } from '../slide-definitions';
       line-height: 1.4;
     }
 
-    .inline-code,
-    .listing {
+    .inline-code {
       padding: var(--space-2) var(--space-3);
       border-radius: var(--radius-sm);
       background: var(--surface-editor);
       color: var(--text-primary);
       font-family: var(--font-mono);
       font-size: 0.875rem;
-    }
-
-    .code {
-      inline-size: 100%;
-      margin: 0;
-    }
-
-    .caption {
-      margin-block-end: var(--space-2);
-      color: var(--text-dim);
-      font-family: var(--font-mono);
-      font-size: 0.8125rem;
-    }
-
-    .listing {
-      margin: 0;
-      padding: var(--space-4);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-md);
-      font-size: clamp(0.875rem, 1.4vw, 1.125rem);
-      line-height: var(--line-code);
-      overflow-x: auto;
     }
 
     @keyframes slide-in {

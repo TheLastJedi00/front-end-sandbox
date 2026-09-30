@@ -1,8 +1,10 @@
-import { LevelConcept } from '../core/models';
+import { LevelConcept, SourceFileId } from '../core/models';
 
-/** Uma linha de codigo mostrada no slide, com a cor do papel que ela cumpre. */
+/** Codigo mostrado no slide, com o mesmo realce que ele tera na IDE. */
 export interface SlideCode {
   readonly caption?: string;
+  /** Linguagem do realce; sem ela, o texto aparece sem cores. */
+  readonly language?: SourceFileId;
   readonly lines: readonly string[];
 }
 
@@ -100,6 +102,7 @@ export const CONCEPT_SLIDES: Readonly<Record<LevelConcept, SlideDefinition>> = {
     accent: HTML_ACCENT,
     code: {
       caption: 'index.html',
+      language: 'html',
       lines: ['<sky>', '    <ball></ball>', '</sky>', '', '<!-- a bola está dentro do céu -->'],
     },
   },
@@ -112,6 +115,7 @@ export const CONCEPT_SLIDES: Readonly<Record<LevelConcept, SlideDefinition>> = {
     accent: CSS_ACCENT,
     code: {
       caption: 'style.css',
+      language: 'css',
       lines: [
         'ball {',
         '    color: red;',
@@ -134,6 +138,7 @@ export const CONCEPT_SLIDES: Readonly<Record<LevelConcept, SlideDefinition>> = {
     accent: JS_ACCENT,
     code: {
       caption: 'script.js',
+      language: 'js',
       lines: ['if(key("D")){', '    avancar()', '}'],
     },
   },
