@@ -13,20 +13,25 @@ import { SlideDefinition } from '../slide-definitions';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'slide', '[attr.data-slide]': 'slide().id' },
   template: `
+    <!-- Cada bloco entra depois do anterior: --i e a ordem de entrada. -->
     <article class="body" [style.--accent]="accent()">
       @if (slide().eyebrow) {
-        <p class="eyebrow">{{ slide().eyebrow }}</p>
+        <p class="eyebrow enter" style="--i: 0">{{ slide().eyebrow }}</p>
       }
-      <h1 class="title">{{ slide().title }}</h1>
+      <h1 class="title" [attr.aria-label]="slide().title">
+        @for (word of titleWords(); track $index) {
+          <span class="word" aria-hidden="true" [style.--w]="$index">{{ word }} </span>
+        }
+      </h1>
 
       @if (slide().lead) {
-        <p class="lead">{{ slide().lead }}</p>
+        <p class="lead enter" style="--i: 2">{{ slide().lead }}</p>
       }
 
       @if (slide().points; as points) {
         <ul class="points">
-          @for (point of points; track point.label) {
-            <li class="point" [style.--accent]="point.accent ?? accent()">
+          @for (point of points; track point.label; let j = $index) {
+            <li class="point enter" [style.--i]="3 + j" [style.--accent]="point.accent ?? accent()">
               <span class="label">{{ point.label }}</span>
               <strong class="text">{{ point.text }}</strong>
               @if (point.code) {
@@ -38,7 +43,12 @@ import { SlideDefinition } from '../slide-definitions';
       }
 
       @if (slide().code; as code) {
-        <app-code-listing [code]="code" [startDelay]="300" />
+        <app-code-listing
+          class="enter"
+          [style.--i]="codeOrder()"
+          [code]="code"
+          [startDelay]="codeDelay()"
+        />
       }
     </article>
   `,
@@ -59,6 +69,40 @@ import { SlideDefinition } from '../slide-definitions';
       max-inline-size: 56rem;
     }
 
+    /* Os blocos esperam a transicao do slide comecar e entram em cascata. */
+    .enter {
+      animation: rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: calc(var(--entry-base) + var(--i, 0) * var(--entry-gap));
+    }
+
+    :host {
+      --entry-base: 120ms;
+      --entry-gap: 110ms;
+    }
+
+    .word {
+      display: inline-block;
+      white-space: pre;
+      animation: word-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: calc(var(--entry-base) + var(--entry-gap) + var(--w) * 60ms);
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(1.5rem);
+        filter: blur(4px);
+      }
+    }
+
+    @keyframes word-in {
+      from {
+        opacity: 0;
+        transform: translateY(0.6em) rotateX(-60deg);
+        filter: blur(6px);
+      }
+    }
+
     .eyebrow {
       margin: 0;
       color: var(--accent);
@@ -74,7 +118,13 @@ import { SlideDefinition } from '../slide-definitions';
       font-weight: 600;
       line-height: 1.1;
       letter-spacing: -0.02em;
-      background: linear-gradient(120deg, var(--text-inverse), var(--accent) 140%);
+      perspective: 40rem;
+    }
+
+    /* O gradiente fica em cada palavra: com transform nos filhos, o
+       background-clip do titulo inteiro nao acompanharia o movimento. */
+    .word {
+      background: linear-gradient(120deg, var(--text-inverse) 30%, var(--accent) 180%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
@@ -137,4 +187,10 @@ export class Slide {
   readonly slide = input.required<SlideDefinition>();
 
   protected readonly accent = computed(() => this.slide().accent ?? 'var(--state-hint)');
+  protected readonly titleWords = computed(() => this.slide().title.split(' '));
+
+  /** O codigo entra depois do texto e dos pontos. */
+  protected readonly codeOrder = computed(() => 3 + (this.slide().points?.length ?? 0));
+  /** A digitacao comeca quando a janela do codigo ja terminou de subir. */
+  protected readonly codeDelay = computed(() => 120 + this.codeOrder() * 110 + 280);
 }
