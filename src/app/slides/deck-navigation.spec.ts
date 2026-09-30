@@ -1,4 +1,12 @@
-import { advance, completed, DECK_START, retreat, stepsOf } from './deck-navigation';
+import {
+  advance,
+  advanceWhole,
+  completed,
+  DECK_START,
+  retreat,
+  retreatWhole,
+  stepsOf,
+} from './deck-navigation';
 import { SlideDefinition } from './slide-definitions';
 
 const plain: SlideDefinition = { id: 'a', title: 'Sem etapas' };
@@ -60,6 +68,18 @@ describe('retreat', () => {
 
   it('nao passa do comeco', () => {
     expect(retreat(deck, DECK_START)).toEqual(DECK_START);
+  });
+});
+
+describe('sem animacao', () => {
+  it('avanca direto para o proximo slide ja completo', () => {
+    expect(advanceWhole(deck, { slide: 0, step: 0 })).toEqual({ slide: 1, step: 2 });
+    expect(advanceWhole(deck, { slide: 2, step: 2 })).toBeNull();
+  });
+
+  it('volta para o slide anterior ja completo', () => {
+    expect(retreatWhole(deck, { slide: 2, step: 2 })).toEqual({ slide: 1, step: 2 });
+    expect(retreatWhole(deck, { slide: 0, step: 0 })).toEqual({ slide: 0, step: 0 });
   });
 });
 

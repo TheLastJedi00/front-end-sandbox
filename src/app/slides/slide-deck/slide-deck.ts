@@ -1,5 +1,23 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
-import { advance, DECK_START, DeckPosition, retreat, stepsOf } from '../deck-navigation';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
+import { injectIsBrowser } from '../../core/platform/browser';
+import {
+  advance,
+  advanceWhole,
+  completed,
+  DECK_START,
+  DeckPosition,
+  retreat,
+  retreatWhole,
+  stepsOf,
+} from '../deck-navigation';
 import { SlideDefinition } from '../slide-definitions';
 import { Slide } from '../slide/slide';
 
@@ -320,8 +338,17 @@ export class SlideDeck {
   /** O deck acabou — por ter chegado ao fim ou por ter sido pulado. */
   readonly finish = output<void>();
 
+  /**
+   * Quem pediu menos movimento ao sistema ve cada slide ja completo: revelar
+   * pedaco por pedaco so faz sentido com a animacao que acompanha.
+   */
+  private readonly reducedMotion =
+    injectIsBrowser() && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   /** Slide atual e quantas etapas dele ja apareceram. */
-  protected readonly position = signal<DeckPosition>(DECK_START);
+  protected readonly position = linkedSignal<DeckPosition>(() =>
+    this.reducedMotion ? completed(this.slides(), 0) : DECK_START,
+  );
   protected readonly index = computed(() => this.position().slide);
   protected readonly total = computed(() => this.slides().length);
   protected readonly current = computed(() => this.slides()[this.index()]);
@@ -345,7 +372,8 @@ export class SlideDeck {
   private swiped = false;
 
   next(): void {
-    const target = advance(this.slides(), this.position());
+    const step = this.reducedMotion ? advanceWhole : advance;
+    const target = step(this.slides(), this.position());
     if (target === null) {
       this.finish.emit();
       return;
@@ -354,14 +382,15 @@ export class SlideDeck {
   }
 
   previous(): void {
-    this.moveTo(retreat(this.slides(), this.position()));
+    const step = this.reducedMotion ? retreatWhole : retreat;
+    this.moveTo(step(this.slides(), this.position()));
   }
 
   go(index: number): void {
     const slide = Math.min(Math.max(index, 0), this.total() - 1);
     if (slide === this.index()) return;
 
-    this.moveTo({ slide, step: 0 });
+    this.moveTo(this.reducedMotion ? completed(this.slides(), slide) : { slide, step: 0 });
   }
 
   private moveTo(target: DeckPosition): void {

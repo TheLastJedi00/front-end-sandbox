@@ -40,6 +40,24 @@ export function advance(
 }
 
 /**
+ * Sem animacao (`prefers-reduced-motion`), as etapas nao fazem sentido: cada
+ * slide ja aparece completo e avancar vai direto para o proximo.
+ */
+export function advanceWhole(
+  slides: readonly SlideDefinition[],
+  { slide }: DeckPosition,
+): DeckPosition | null {
+  return slide < slides.length - 1 ? completed(slides, slide + 1) : null;
+}
+
+export function retreatWhole(
+  slides: readonly SlideDefinition[],
+  { slide }: DeckPosition,
+): DeckPosition {
+  return completed(slides, Math.max(0, slide - 1));
+}
+
+/**
  * Voltar desfaz a ultima etapa, como no PowerPoint. Do comeco de um slide, o
  * slide anterior volta ja completo — ninguem quer rever as etapas de tras
  * para frente.
