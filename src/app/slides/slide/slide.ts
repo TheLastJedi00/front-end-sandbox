@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { CodeAnatomy } from '../code-anatomy/code-anatomy';
 import { CodeListing } from '../code-listing/code-listing';
+import { ElementTree } from '../element-tree/element-tree';
 import { SlideDefinition } from '../slide-definitions';
 
 /**
@@ -10,7 +11,7 @@ import { SlideDefinition } from '../slide-definitions';
  */
 @Component({
   selector: 'app-slide',
-  imports: [CodeListing, CodeAnatomy],
+  imports: [CodeListing, CodeAnatomy, ElementTree],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'slide', '[attr.data-slide]': 'slide().id' },
   template: `
@@ -50,23 +51,30 @@ import { SlideDefinition } from '../slide-definitions';
         </ul>
       }
 
-      @if (slide().code; as code) {
-        <app-code-listing
-          class="enter"
-          [style.--i]="codeOrder"
-          [code]="code"
-          [startDelay]="codeDelay"
-        />
-      }
+      <!-- Codigo e desenho lado a lado: o aluno le um e ve o outro. -->
+      <div class="visuals" [class.visuals--pair]="!!slide().tree">
+        @if (slide().code; as code) {
+          <app-code-listing
+            class="enter"
+            [style.--i]="codeOrder"
+            [code]="code"
+            [startDelay]="codeDelay"
+          />
+        }
 
-      @if (slide().anatomy; as anatomy) {
-        <app-code-anatomy
-          class="enter"
-          [style.--i]="codeOrder"
-          [anatomy]="anatomy"
-          [step]="anatomyStep()"
-        />
-      }
+        @if (slide().anatomy; as anatomy) {
+          <app-code-anatomy
+            class="enter"
+            [style.--i]="codeOrder"
+            [anatomy]="anatomy"
+            [step]="anatomyStep()"
+          />
+        }
+
+        @if (slide().tree; as tree) {
+          <app-element-tree class="tree" [node]="tree" />
+        }
+      </div>
     </article>
   `,
   styles: `
@@ -76,6 +84,23 @@ import { SlideDefinition } from '../slide-definitions';
       min-block-size: 0;
       padding: var(--space-6) var(--space-4);
       overflow: auto;
+    }
+
+    .visuals {
+      display: grid;
+      gap: var(--space-6);
+      inline-size: 100%;
+    }
+
+    .visuals:empty {
+      display: none;
+    }
+
+    @media (min-inline-size: 900px) {
+      .visuals--pair {
+        grid-template-columns: 3fr 2fr;
+        align-items: center;
+      }
     }
 
     .body {
