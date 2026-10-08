@@ -1,5 +1,5 @@
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { deleteDoc, doc, getDoc } from 'firebase/firestore';
+import { deleteDoc, doc, DocumentData, getDoc, setDoc } from 'firebase/firestore';
 import { loadTestCredentials } from '../../../testing/test-credentials';
 import { firebase } from '../firebase/firebase';
 import { SESSIONS, sessionRef, SessionSnapshot, watchSession, writeSession } from './live-session';
@@ -8,10 +8,14 @@ import { startTimer } from './phase-timer';
 /**
  * Integracao com o projeto Firebase real (sem emulador), usando o usuario de
  * teste de `test-credentials.json`. Sem o arquivo, a suite inteira e pulada.
+ *
+ * A mesma conta serve para testar no navegador: a sessao que existia antes dos
+ * testes e devolvida no fim, para nao derrubar uma apresentacao aberta.
  */
 describe('LiveSession — Firestore real', () => {
   const TIMEOUT = 20_000;
   let uid: string | null = null;
+  let before: DocumentData | undefined;
 
   beforeAll(async () => {
     const credentials = await loadTestCredentials();
@@ -23,11 +27,13 @@ describe('LiveSession — Firestore real', () => {
       credentials.password,
     );
     uid = user.uid;
+    before = (await getDoc(sessionRef(firebase().db, uid))).data();
   }, TIMEOUT);
 
   afterAll(async () => {
     if (!uid) return;
-    await deleteDoc(sessionRef(firebase().db, uid));
+    const ref = sessionRef(firebase().db, uid);
+    await (before ? setDoc(ref, before) : deleteDoc(ref));
     await signOut(firebase().auth);
   }, TIMEOUT);
 
