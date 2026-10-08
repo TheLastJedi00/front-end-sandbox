@@ -47,6 +47,8 @@ O que é sincronizado:
 
 O que **não** é sincronizado: o código que cada aluno escreve, dicas, "Mostrar solução", "Reiniciar fase" e os cards de sintaxe. Isso continua local, em cada máquina.
 
+**Alerta de solução:** "Mostrar solução" continua livre no aluno, mas avisa o professor. A máquina do aluno grava um alerta em `sessoes/{uid}/alertas`, e a do apresentador mostra um **popup na tela** dizendo que uma máquina mostrou a solução daquela fase.
+
 ## 4. Timer de 3 minutos nas fases de programação
 - O timer começa quando o apresentador fecha o mini-deck de conceito e a turma entra na IDE
 - Duração fixa de **3 minutos** por fase (constante no código, não é configurável na tela)
@@ -65,7 +67,8 @@ O que **não** é sincronizado: o código que cada aluno escreve, dicas, "Mostra
 - Projeto: `front-end-sandbox-91f5f`. A configuração web (`apiKey`, `projectId` etc.) é um identificador público do app, não um segredo, e pode ficar no código
 - No console: ativar o provedor **E-mail/senha**, criar a conta do professor e a do usuário de teste (`claude@claude.com`), criar o banco Firestore e publicar as regras
 - Regras do Firestore, versionadas no repositório:
-  - `sessoes/{uid}`: leitura e escrita só quando `request.auth.uid == uid`
+  - `sessoes/{uid}` e as subcoleções dele (alertas): leitura e escrita só quando `request.auth.uid == uid`
+  - Publicadas por deploy (`firebase deploy --only firestore:rules`)
   - Todo o resto: negado
 
 # Restrições
@@ -79,7 +82,7 @@ O que **não** é sincronizado: o código que cada aluno escreve, dicas, "Mostra
 # Fora de escopo
 - Contas de aluno, cadastro, recuperação de senha ou várias turmas com professores diferentes ao mesmo tempo
 - Ver ou corrigir o código dos alunos na máquina do professor
-- Placar, ranking ou qualquer dado de aluno guardado no Firestore
+- Placar, ranking ou qualquer dado de aluno guardado no Firestore (o alerta de solução guarda só a fase e um id aleatório da máquina)
 - Emulador do Firebase, CI e deploy
 
 # Decisões assumidas

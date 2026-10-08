@@ -20,6 +20,7 @@ src/app/
       phase-timer.ts            # NOVO — start/pause/resume/reset/restante (puro)
       live-session.ts           # NOVO — onSnapshot -> signal; gravações do apresentador
       session-follower.ts       # NOVO — aluno: leva o router para onde a sessão está
+      solution-alerts.ts        # NOVO — aluno avisa "mostrou a solução"; apresentador recebe
   pages/
     login/                      # NOVO — /login (formulário reativo)
     role/                       # NOVO — /papel (apresentador ou aluno)
@@ -48,6 +49,13 @@ interface PresentationState {
   };
   updatedAt: Timestamp;            // serverTimestamp()
 }
+
+// sessoes/{uid}/alertas/{auto-id} — gravado pelo aluno, lido pelo apresentador
+interface SolutionAlert {
+  levelId: number;
+  machine: string;                 // id aleatório da máquina, guardado no localStorage
+  at: Timestamp;                   // serverTimestamp()
+}
 ```
 
 ---
@@ -55,7 +63,7 @@ interface PresentationState {
 ## Fase 0 — Firebase no projeto
 
 - [ ] **T0.1** — Dependência `firebase` (SDK modular) e `core/firebase/firebase.ts` com a config do projeto `front-end-sandbox-91f5f`. Init preguiçoso e só no navegador; sem Analytics. `npm run build` continua prerenderizando.
-- [ ] **T0.2** — `firestore.rules` e `firebase.json` no repositório: `sessoes/{uid}` lido/gravado só pelo próprio `uid`; resto negado. Publicação no console (ver **Q.4**).
+- [ ] **T0.2** — `firestore.rules` e `firebase.json` no repositório: `sessoes/{uid}` e as subcoleções dele lidos/gravados só pelo próprio `uid`; resto negado. Deploy das regras com `firebase deploy --only firestore:rules` (ver **Q.4**).
 - [ ] **T0.3** — Credenciais de teste: `test-credentials.json` ignorado pelo git, servido só no `ng test` (assets da config de teste), com um `test-credentials.example.json` versionado. Helper que lê o arquivo e marca os testes de integração como pulados quando ele não existe (ver **Q.3**).
 
 ## Fase 1 — Login e papel
@@ -81,6 +89,7 @@ interface PresentationState {
 - [ ] **T3.4** — Fase (`/sandbox/:id`): o mini-deck de conceito abre e fecha conforme `conceptOpen`, com o `deck` sincronizado; "Próxima fase" e "Pular" só no apresentador. No aluno, o `BriefingStore` deixa de decidir se o conceito aparece.
 - [ ] **T3.5** — Fim (`/fim`): sincronizado; "Jogar de novo"/"Voltar ao início" só no apresentador, que ganha **Reiniciar apresentação** (zera a sessão e volta todos à abertura).
 - [ ] **T3.6** — Apresentador que dá F5 retoma de onde a sessão está, em vez de recomeçar a abertura.
+- [ ] **T3.7** — Alerta de solução (ver **Q.1**): no aluno, "Mostrar solução" continua livre e grava um alerta em `sessoes/{uid}/alertas`; no apresentador, um popup na tela ("Uma máquina mostrou a solução da fase N") que some sozinho e pode ser fechado. Só contam alertas da aula atual (depois do último "Reiniciar apresentação"), e alertas próximos viram um só ("3 máquinas…").
 
 ## Fase 4 — Timer de 3 minutos
 
@@ -98,13 +107,10 @@ interface PresentationState {
 
 ## Questões
 
-- **Q.1 — "Mostrar solução" e "Reiniciar fase" no aluno.** Continuam livres em cada máquina (como diz o contexto) ou o professor quer que só ele possa liberar a solução para a turma?
-  *Recomendado:* continuam livres; controlar isso é escopo de outra spec.
-- **Q.2 — Tempo esgotado.** Só avisar (decisão do contexto) ou o apresentador também ganha um botão **+1 min**?
-  *Recomendado:* só avisar + "Reiniciar"; o +1 min é fácil de somar depois se fizer falta.
-- **Q.3 — Credenciais do teste de integração.** Arquivo `test-credentials.json` ignorado pelo git e servido só no `ng test`; sem ele, os testes de integração são pulados.
-  *Recomendado:* esse formato. Eu crio o arquivo local com a conta `claude@claude.com`.
-- **Q.4 — Banco e regras no console.** Criar o Firestore e publicar as regras exige acesso ao projeto. Você faz pelo console (eu entrego o texto das regras), ou você roda `npx firebase-tools login` e eu publico com `firebase deploy --only firestore:rules`?
-  *Recomendado:* pelo console, em modo produção, região `southamerica-east1` (São Paulo).
-- **Q.5 — Aluno que fecha o aviso de conceito.** Com o conceito aberto pelo professor, o aluno fica preso no overlay até o professor fechar.
-  *Recomendado:* sim, preso — é o que mantém a turma junta; o professor fecha para todos.
+**Decididas pelo usuário em 2026-10-08:**
+
+- **Q.1 — "Mostrar solução" e "Reiniciar fase" continuam livres no aluno**, mas mostrar a solução **alerta o professor com um popup na tela dele** (T3.7). ✅
+- **Q.2 — Tempo esgotado só avisa**, sem botão de +1 min. ✅
+- **Q.3 — Credenciais em `test-credentials.json`**, ignorado pelo git e servido só no `ng test`, com a conta `claude@claude.com`. ✅
+- **Q.4 — As regras são publicadas por deploy** (`firebase deploy --only firestore:rules`). O login do `firebase-tools` é interativo e fica com o usuário (`! npx firebase-tools login`). ✅
+- **Q.5 — O aluno fica no conceito** até o professor fechar para todos. ✅
