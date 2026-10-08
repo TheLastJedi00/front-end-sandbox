@@ -1,5 +1,4 @@
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -10,6 +9,7 @@ import {
   numberAttribute,
   signal,
   OnInit,
+  untracked,
 } from '@angular/core';
 import {
   Diagnostic,
@@ -39,6 +39,9 @@ import { BriefingStore } from '../../core/services/briefing-store';
 import { SyntaxCards } from '../../ide/syntax-cards/syntax-cards';
 import { ConceptOverlay } from '../../slides/concept-overlay/concept-overlay';
 import { SessionBadge } from '../../core/session/session-badge/session-badge';
+import { LiveSession } from '../../core/session/live-session';
+import { RoleStore } from '../../core/session/role-store';
+import { DeckPosition } from '../../slides/deck-navigation';
 import { GameStage } from './game-stage';
 import { GoalPanel } from './goal-panel';
 import { LevelProgress } from './level-progress';
@@ -64,12 +67,18 @@ import { LevelProgress } from './level-progress';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (showConcept()) {
-      <app-concept-overlay [concept]="level().concept" (dismiss)="startLevel()" />
+      <app-concept-overlay
+        [concept]="level().concept"
+        [synced]="conceptDeck()"
+        [followOnly]="roles.isStudent()"
+        (moved)="onConceptMoved($event)"
+        (dismiss)="startLevel()"
+      />
     }
 
     <app-ide-shell>
       <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'">
-        <app-level-progress [current]="level().id" />
+        <app-level-progress [current]="level().id" [navigable]="roles.isPresenter()" />
         <app-session-badge />
       </app-title-bar>
       <app-activity-bar ideActivityBar />
@@ -120,9 +129,13 @@ import { LevelProgress } from './level-progress';
           @if (validation().completed) {
             <div class="done" role="status">
               <strong>Fase concluída!</strong>
-              <button type="button" class="next" (click)="goToNext()">
-                {{ isLast() ? 'Ver o resultado' : 'Próxima fase' }}
-              </button>
+              @if (roles.isPresenter()) {
+                <button type="button" class="next" (click)="goToNext()">
+                  {{ isLast() ? 'Ver o resultado' : 'Próxima fase' }}
+                </button>
+              } @else {
+                <span class="wait">O professor leva a turma para a próxima etapa.</span>
+              }
             </div>
           }
         </div>
@@ -189,6 +202,11 @@ import { LevelProgress } from './level-progress';
       color: var(--text-primary);
     }
 
+    .wait {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
     .next {
       padding: var(--space-2) var(--space-4);
       border: none;
@@ -215,6 +233,8 @@ export class SandboxPage implements OnInit {
   private readonly progress = inject(ProgressStore);
   private readonly storage = inject(CodeStorage);
   private readonly briefings = inject(BriefingStore);
+  private readonly session = inject(LiveSession);
+  protected readonly roles = inject(RoleStore);
 
   /**
    * Cada incremento leva o cursor de volta ao editor. Os cards de sintaxe cobrem
@@ -233,13 +253,21 @@ export class SandboxPage implements OnInit {
   });
   protected readonly activeFile = linkedSignal<SourceFileId>(() => this.level().focusFile);
 
+  /** A sessao ao vivo, quando ela fala desta fase. */
+  private readonly liveLevel = computed(() => {
+    const state = this.session.state();
+    return state?.stage === 'fase' && state.levelId === this.level().id ? state : null;
+  });
+
   /**
-   * O slide de conceito abre a fase apenas na primeira vez: numa apresentacao de
-   * 15 minutos, quem volta a uma fase nao pode esperar o slide de novo.
+   * Quem abre e fecha o conceito e o professor, para a turma toda. Sem a sessao
+   * desta fase, vale a regra local: o slide abre a fase so na primeira vez.
    */
-  protected readonly showConcept = linkedSignal<boolean>(
-    () => !this.briefings.wasSeen(this.level().id),
+  protected readonly showConcept = computed(
+    () => this.liveLevel()?.conceptOpen ?? !this.briefings.wasSeen(this.level().id),
   );
+  /** Slide e etapa do conceito em que a turma esta. */
+  protected readonly conceptDeck = computed(() => this.liveLevel()?.deck ?? null);
 
   /**
    * A sugestao automatica cala a boca quando nao tem mais o que ajudar: fase
@@ -317,9 +345,23 @@ export class SandboxPage implements OnInit {
   );
 
   constructor() {
-    // Sem o slide de conceito na frente, a fase ja abre com o cursor no editor.
-    afterNextRender(() => {
-      if (!this.showConcept()) this.askFocus();
+    // Sem o slide de conceito na frente, a fase ja abre com o cursor no editor —
+    // tambem quando e o professor que fecha o conceito para a turma.
+    effect(() => {
+      if (!this.showConcept()) untracked(() => this.askFocus());
+    });
+
+    // O apresentador que chega a uma fase por conta propria (pela trilha) leva a
+    // turma junto. So na chegada a cada fase (a pagina e reaproveitada entre
+    // elas): depois disso, quem muda a sessao sao os botoes.
+    let arrivedAt: number | null = null;
+    effect(() => {
+      const level = this.level().id;
+      const state = this.session.state();
+      if (arrivedAt === level || !state || !this.roles.isPresenter()) return;
+
+      arrivedAt = level;
+      if (state.stage !== 'fase' || state.levelId !== level) void this.session.enterLevel(level);
     });
 
     effect(() => {
@@ -354,9 +396,14 @@ export class SandboxPage implements OnInit {
   }
 
   protected startLevel(): void {
+    if (!this.roles.isPresenter()) return;
+
     this.briefings.markSeen(this.level().id);
-    this.showConcept.set(false);
-    this.askFocus();
+    void this.session.update({ conceptOpen: false });
+  }
+
+  protected onConceptMoved(deck: DeckPosition): void {
+    if (this.roles.isPresenter()) void this.session.update({ deck });
   }
 
   private askFocus(): void {
@@ -364,8 +411,11 @@ export class SandboxPage implements OnInit {
   }
 
   protected goToNext(): void {
+    if (!this.roles.isPresenter()) return;
+
     const next = this.level().id + 1;
-    this.router.navigate(next > LAST_LEVEL ? ['/fim'] : ['/sandbox', next]);
+    void (next > LAST_LEVEL ? this.session.finish() : this.session.enterLevel(next));
+    void this.router.navigate(next > LAST_LEVEL ? ['/fim'] : ['/sandbox', next]);
   }
 
   protected revealHint(): void {
