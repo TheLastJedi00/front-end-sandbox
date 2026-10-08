@@ -1,5 +1,5 @@
 import { initialPresentation } from './presentation-state';
-import { followTarget } from './session-follower';
+import { followTarget, resumeTarget } from './session-follower';
 
 const base = initialPresentation(0);
 
@@ -24,5 +24,21 @@ describe('followTarget', () => {
   it('nas telas de entrada ninguem e puxado', () => {
     expect(followTarget('/login', { ...base, stage: 'fim' })).toBeNull();
     expect(followTarget('/papel', { ...base, stage: 'fim' })).toBeNull();
+  });
+});
+
+describe('resumeTarget', () => {
+  it('apresentador na abertura volta para onde a aula esta', () => {
+    expect(resumeTarget('/', { ...base, stage: 'fase', levelId: 2 })).toBe('/sandbox/2');
+    expect(resumeTarget('/', { ...base, stage: 'fim' })).toBe('/fim');
+  });
+
+  it('a aula ainda na abertura: fica', () => {
+    expect(resumeTarget('/', base)).toBeNull();
+  });
+
+  it('fora da abertura, a rota e escolha do apresentador', () => {
+    expect(resumeTarget('/sandbox/1', { ...base, stage: 'fase', levelId: 3 })).toBeNull();
+    expect(resumeTarget('/fim', base)).toBeNull();
   });
 });
