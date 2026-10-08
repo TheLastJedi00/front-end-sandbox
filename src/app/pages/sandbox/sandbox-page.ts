@@ -42,8 +42,10 @@ import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { LiveSession } from '../../core/session/live-session';
 import { RoleStore } from '../../core/session/role-store';
 import { SolutionAlerts } from '../../core/session/solution-alerts';
+import { Clock } from '../../core/platform/clock';
 import {
   IDLE_TIMER,
+  isExpired,
   pauseTimer,
   resetTimer,
   resumeTimer,
@@ -143,6 +145,19 @@ import { LevelProgress } from './level-progress';
             </p>
           }
 
+          @if (timeUp() && !validation().completed) {
+            <div class="time-up" role="alert">
+              <strong>Tempo esgotado!</strong>
+              <span>
+                {{
+                  roles.isPresenter()
+                    ? 'Avance quando a turma estiver pronta.'
+                    : 'Pode terminar o que está fazendo — o professor decide quando seguir.'
+                }}
+              </span>
+            </div>
+          }
+
           @if (validation().completed) {
             <div class="done" role="status">
               <strong>Fase concluída!</strong>
@@ -219,6 +234,19 @@ import { LevelProgress } from './level-progress';
       color: var(--text-primary);
     }
 
+    .time-up {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: var(--space-2) var(--space-3);
+      margin-block-start: var(--space-4);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--state-error) 18%, var(--surface-raised));
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+
     .wait {
       color: var(--text-muted);
       font-size: 0.875rem;
@@ -286,6 +314,9 @@ export class SandboxPage implements OnInit {
   );
   /** Timer da fase, como a sessao diz; parado fora dela. */
   protected readonly timer = computed(() => this.liveLevel()?.timer ?? IDLE_TIMER);
+  private readonly clock = inject(Clock);
+  /** Os 3 minutos acabaram. So avisa: o editor continua livre. */
+  protected readonly timeUp = computed(() => isExpired(this.timer(), this.clock.now()));
   /** Slide e etapa do conceito em que a turma esta. */
   protected readonly conceptDeck = computed(() => this.liveLevel()?.deck ?? null);
 

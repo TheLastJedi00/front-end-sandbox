@@ -1,14 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  input,
-  output,
-  signal,
-} from '@angular/core';
-import { injectIsBrowser } from '../../core/platform/browser';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { Clock } from '../../core/platform/clock';
 import {
   formatRemaining,
   isExpired,
@@ -18,8 +9,6 @@ import {
 
 /** A partir daqui o relogio fica em alerta. */
 const LAST_MINUTE_MS = 60_000;
-/** Mais rapido que um segundo: a virada do numero nao atrasa visivelmente. */
-const TICK_MS = 250;
 
 /**
  * Relogio da fase na barra de titulo. Conta sozinho a partir do `endsAt` da
@@ -47,7 +36,10 @@ const TICK_MS = 250;
     @if (controls()) {
       @switch (timer().status) {
         @case ('rodando') {
-          <button class="control" type="button" (click)="pause.emit()">Pausar</button>
+          <!-- No zero nao ha o que pausar: so reiniciar. -->
+          @if (!expired()) {
+            <button class="control" type="button" (click)="pause.emit()">Pausar</button>
+          }
         }
         @case ('pausado') {
           <button class="control" type="button" (click)="resume.emit()">Retomar</button>
@@ -150,7 +142,7 @@ export class PhaseTimer {
   readonly resume = output<void>();
   readonly restart = output<void>();
 
-  private readonly now = signal(Date.now());
+  private readonly now = inject(Clock).now;
 
   protected readonly remaining = computed(() => remainingMs(this.timer(), this.now()));
   protected readonly display = computed(() => formatRemaining(this.remaining()));
@@ -165,11 +157,4 @@ export class PhaseTimer {
     const minutes = Math.ceil(this.remaining() / 60_000);
     return minutes === 1 ? 'Falta 1 minuto' : `Faltam ${minutes} minutos`;
   });
-
-  constructor() {
-    if (!injectIsBrowser()) return;
-
-    const tick = setInterval(() => this.now.set(Date.now()), TICK_MS);
-    inject(DestroyRef).onDestroy(() => clearInterval(tick));
-  }
 }
