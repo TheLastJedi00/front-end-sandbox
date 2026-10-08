@@ -62,46 +62,46 @@ interface SolutionAlert {
 
 ## Fase 0 — Firebase no projeto
 
-- [ ] **T0.1** — Dependência `firebase` (SDK modular) e `core/firebase/firebase.ts` com a config do projeto `front-end-sandbox-91f5f`. Init preguiçoso e só no navegador; sem Analytics. `npm run build` continua prerenderizando.
-- [ ] **T0.2** — `firestore.rules` e `firebase.json` no repositório: `sessoes/{uid}` e as subcoleções dele lidos/gravados só pelo próprio `uid`; resto negado. Deploy das regras com `firebase deploy --only firestore:rules` (ver **Q.4**).
-- [ ] **T0.3** — Credenciais de teste: `test-credentials.json` ignorado pelo git, servido só no `ng test` (assets da config de teste), com um `test-credentials.example.json` versionado. Helper que lê o arquivo e marca os testes de integração como pulados quando ele não existe (ver **Q.3**).
+- [x] **T0.1** — Dependência `firebase` (SDK modular) e `core/firebase/firebase.ts` com a config do projeto `front-end-sandbox-91f5f`. Init preguiçoso e só no navegador; sem Analytics. `npm run build` continua prerenderizando.
+- [x] **T0.2** — `firestore.rules` e `firebase.json` no repositório: `sessoes/{uid}` e as subcoleções dele lidos/gravados só pelo próprio `uid`; resto negado. Deploy das regras com `firebase deploy --only firestore:rules` (ver **Q.4**).
+- [x] **T0.3** — Credenciais de teste: `test-credentials.json` ignorado pelo git, servido só no `ng test` (assets da config de teste), com um `test-credentials.example.json` versionado. Helper que lê o arquivo e marca os testes de integração como pulados quando ele não existe (ver **Q.3**).
 
 ## Fase 1 — Login e papel
 
-- [ ] **T1.1** — `core/auth/auth-store`: `user` como signal vindo de `onAuthStateChanged`, `ready` para saber quando o Firebase já respondeu, `login(email, senha)` e `logout()`. Persistência local (F5 não desloga).
-- [ ] **T1.2** — `pages/login`: rota `/login` com formulário reativo (e-mail, senha), botão desabilitado enquanto envia, erros do Firebase traduzidos para português ("E-mail ou senha incorretos", "Sem conexão"…).
-- [ ] **T1.3** — `core/session/role-store` + `pages/role`: rota `/papel` com dois botões grandes, **Entrar como apresentador** e **Entrar como aluno**; a escolha fica no `localStorage`.
-- [ ] **T1.4** — `core/auth/guards`: sem login → `/login`; sem papel → `/papel`; já logado e com papel, `/login` e `/papel` levam à apresentação. No servidor (prerender) os guards liberam. Rotas novas no `app.routes.server.ts`.
-- [ ] **T1.5** — Botão discreto **Sair** (logout + limpa o papel) acessível no deck e na IDE.
+- [x] **T1.1** — `core/auth/auth-store`: `user` como signal vindo de `onAuthStateChanged`, `ready` para saber quando o Firebase já respondeu, `login(email, senha)` e `logout()`. Persistência local (F5 não desloga).
+- [x] **T1.2** — `pages/login`: rota `/login` com formulário reativo (e-mail, senha), botão desabilitado enquanto envia, erros do Firebase traduzidos para português ("E-mail ou senha incorretos", "Sem conexão"…).
+- [x] **T1.3** — `core/session/role-store` + `pages/role`: rota `/papel` com dois botões grandes, **Entrar como apresentador** e **Entrar como aluno**; a escolha fica no `localStorage`.
+- [x] **T1.4** — `core/auth/guards`: sem login → `/login`; sem papel → `/papel`; já logado e com papel, `/login` e `/papel` levam à apresentação. No servidor (prerender) os guards liberam. Rotas novas no `app.routes.server.ts`.
+- [x] **T1.5** — Botão discreto **Sair** (logout + limpa o papel) acessível no deck e na IDE.
 
 ## Fase 2 — Sessão ao vivo
 
-- [ ] **T2.1** — `core/session/presentation-state`: modelo, estado inicial e `parsePresentationState(unknown)` tolerante a documento ausente ou incompleto. Testes unitários.
-- [ ] **T2.2** — `core/session/phase-timer`: `PHASE_DURATION_MS = 180_000`, `startTimer`, `pauseTimer`, `resumeTimer`, `resetTimer`, `remainingMs(timer, now)`, `isExpired`. Funções puras com testes (inclusive pausar/retomar e o zero).
-- [ ] **T2.3** — `core/session/live-session`: escuta `sessoes/{uid}` com `onSnapshot` e expõe o estado como signal; métodos de gravação do apresentador (`setDoc` com `merge` + `updatedAt: serverTimestamp()`); `connected`/`pendingWrites` para indicar sincronia.
-- [ ] **T2.4** — Testes de integração **no Firestore real** com o usuário de teste: login, gravar e ler `sessoes/{uid}`, `onSnapshot` recebendo a mudança, e a regra negando o documento de outro `uid`. Limpam o que gravaram.
+- [x] **T2.1** — `core/session/presentation-state`: modelo, estado inicial e `parsePresentationState(unknown)` tolerante a documento ausente ou incompleto. Testes unitários.
+- [x] **T2.2** — `core/session/phase-timer`: `PHASE_DURATION_MS = 180_000`, `startTimer`, `pauseTimer`, `resumeTimer`, `resetTimer`, `remainingMs(timer, now)`, `isExpired`. Funções puras com testes (inclusive pausar/retomar e o zero).
+- [x] **T2.3** — `core/session/live-session`: escuta `sessoes/{uid}` com `onSnapshot` e expõe o estado como signal; métodos de gravação do apresentador (`setDoc` com `merge` + `updatedAt: serverTimestamp()`); `connected`/`pendingWrites` para indicar sincronia.
+- [x] **T2.4** — Testes de integração **no Firestore real** com o usuário de teste: login, gravar e ler `sessoes/{uid}`, `onSnapshot` recebendo a mudança, e a regra negando o documento de outro `uid`. Limpam o que gravaram.
 
 ## Fase 3 — Apresentação sincronizada
 
-- [ ] **T3.1** — `slides/slide-deck`: modo controlado — `position` pode vir de fora e cada movimento sai por um `output`; com `readonly`, botões, teclado, toque e swipe ficam desligados (o aluno só assiste). Testes da navegação continuam passando.
-- [ ] **T3.2** — Abertura (`/`): apresentador grava `stage: 'abertura'` e cada `deck`; aluno exibe a posição recebida. Ao terminar o deck, o apresentador leva todos para a fase 1.
-- [ ] **T3.3** — `core/session/session-follower`: na máquina do aluno, quando `stage`/`levelId` mudam, o router vai para `/`, `/sandbox/:id` ou `/fim`. Quem entra no meio da aula cai direto onde a turma está.
-- [ ] **T3.4** — Fase (`/sandbox/:id`): o mini-deck de conceito abre e fecha conforme `conceptOpen`, com o `deck` sincronizado; "Próxima fase" e "Pular" só no apresentador. No aluno, o `BriefingStore` deixa de decidir se o conceito aparece.
-- [ ] **T3.5** — Fim (`/fim`): sincronizado; "Jogar de novo"/"Voltar ao início" só no apresentador, que ganha **Reiniciar apresentação** (zera a sessão e volta todos à abertura).
-- [ ] **T3.6** — Apresentador que dá F5 retoma de onde a sessão está, em vez de recomeçar a abertura.
-- [ ] **T3.7** — Alerta de solução (ver **Q.1**): no aluno, "Mostrar solução" continua livre e grava um alerta em `sessoes/{uid}/alertas`; no apresentador, um popup na tela ("Uma máquina mostrou a solução da fase N") que some sozinho e pode ser fechado. Só contam alertas da aula atual (depois do último "Reiniciar apresentação"), e alertas próximos viram um só ("3 máquinas…").
+- [x] **T3.1** — `slides/slide-deck`: modo controlado — `position` pode vir de fora e cada movimento sai por um `output`; com `readonly`, botões, teclado, toque e swipe ficam desligados (o aluno só assiste). Testes da navegação continuam passando.
+- [x] **T3.2** — Abertura (`/`): apresentador grava `stage: 'abertura'` e cada `deck`; aluno exibe a posição recebida. Ao terminar o deck, o apresentador leva todos para a fase 1.
+- [x] **T3.3** — `core/session/session-follower`: na máquina do aluno, quando `stage`/`levelId` mudam, o router vai para `/`, `/sandbox/:id` ou `/fim`. Quem entra no meio da aula cai direto onde a turma está.
+- [x] **T3.4** — Fase (`/sandbox/:id`): o mini-deck de conceito abre e fecha conforme `conceptOpen`, com o `deck` sincronizado; "Próxima fase" e "Pular" só no apresentador. No aluno, o `BriefingStore` deixa de decidir se o conceito aparece.
+- [x] **T3.5** — Fim (`/fim`): sincronizado; "Jogar de novo"/"Voltar ao início" só no apresentador, que ganha **Reiniciar apresentação** (zera a sessão e volta todos à abertura).
+- [x] **T3.6** — Apresentador que dá F5 retoma de onde a sessão está, em vez de recomeçar a abertura.
+- [x] **T3.7** — Alerta de solução (ver **Q.1**): no aluno, "Mostrar solução" continua livre e grava um alerta em `sessoes/{uid}/alertas`; no apresentador, um popup na tela ("Uma máquina mostrou a solução da fase N") que some sozinho e pode ser fechado. Só contam alertas da aula atual (depois do último "Reiniciar apresentação"), e alertas próximos viram um só ("3 máquinas…").
 
 ## Fase 4 — Timer de 3 minutos
 
-- [ ] **T4.1** — `ide/phase-timer`: relógio `mm:ss` na barra de título da IDE, calculado localmente a partir de `endsAt` (sem gravar por segundo); cor de alerta no último minuto; anúncio `aria-live` a cada minuto e no zero.
-- [ ] **T4.2** — O timer inicia quando o apresentador fecha o conceito e zera ao trocar de fase. Controles **Pausar/Retomar** e **Reiniciar** só no apresentador.
-- [ ] **T4.3** — Ao zerar: aviso "Tempo esgotado" em todas as máquinas, sem bloquear o editor.
+- [x] **T4.1** — `ide/phase-timer`: relógio `mm:ss` na barra de título da IDE, calculado localmente a partir de `endsAt` (sem gravar por segundo); cor de alerta no último minuto; anúncio `aria-live` a cada minuto e no zero.
+- [x] **T4.2** — O timer inicia quando o apresentador fecha o conceito e zera ao trocar de fase. Controles **Pausar/Retomar** e **Reiniciar** só no apresentador.
+- [x] **T4.3** — Ao zerar: aviso "Tempo esgotado" em todas as máquinas, sem bloquear o editor.
 
 ## Fase 5 — Qualidade e entrega
 
-- [ ] **T5.1** — Testar no navegador, rodando localmente, com `claude@claude.com`: login, `/papel`, duas abas (apresentador + aluno) seguindo abertura → conceito → fase → fim, timer (pausar, retomar, zerar), F5 nas duas abas e queda de rede.
-- [ ] **T5.2** — Atualizar o `README.md`: login, papéis, sessão ao vivo, timer, como configurar o Firebase e rodar os testes de integração.
-- [ ] **T5.3** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
+- [x] **T5.1** — Testar no navegador, rodando localmente, com `claude@claude.com`: login, `/papel`, duas abas (apresentador + aluno) seguindo abertura → conceito → fase → fim, timer (pausar, retomar, zerar), F5 nas duas abas e queda de rede.
+- [x] **T5.2** — Atualizar o `README.md`: login, papéis, sessão ao vivo, timer, como configurar o Firebase e rodar os testes de integração.
+- [x] **T5.3** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
 
 ---
 
@@ -114,3 +114,25 @@ interface SolutionAlert {
 - **Q.3 — Credenciais em `test-credentials.json`**, ignorado pelo git e servido só no `ng test`, com a conta `claude@claude.com`. ✅
 - **Q.4 — As regras são publicadas por deploy** (`firebase deploy --only firestore:rules`). O login do `firebase-tools` é interativo e fica com o usuário (`! npx firebase-tools login`). ✅
 - **Q.5 — O aluno fica no conceito** até o professor fechar para todos. ✅
+
+**Decididas durante a execução (recomendação tomada, destacadas no PR):**
+
+- **Q.6 — Orçamento do bundle inicial sobe para 1MB** (erro em 2MB). O SDK do Firebase entra no
+  bundle inicial porque os guards precisam do login antes de qualquer rota.
+- **Q.7 — "Reiniciar apresentação" zera a turma em todas as máquinas.** Ao ver um `startedAt`
+  novo, cada máquina apaga o código, o progresso e os conceitos vistos da turma anterior — senão
+  a turma seguinte encontraria o código de quem sentou antes.
+- **Q.8 — O apresentador leva a turma pela trilha.** Se ele chega a uma fase pela trilha de
+  fases, a sessão vai junto. A retomada depois de F5/login só acontece a partir da abertura
+  (`/`): fora dela, a rota em que o apresentador está é escolha dele.
+- **Q.9 — "Voltar ao início" saiu do fim**, trocado por "Reiniciar apresentação": ir para a
+  abertura sem avisar a sessão deixaria a turma em outro lugar. No aluno, o fim não tem botões.
+- **Q.10 — Testes de integração devolvem a sessão que existia**, em vez de apagá-la: a conta de
+  teste também é usada no navegador, e apagar o documento derrubava a apresentação aberta.
+- **Q.11 — `aluno.localhost` liberado no `ng serve`**, para testar apresentador e aluno no mesmo
+  computador (origens diferentes = login e papel diferentes).
+- **Q.12 — Timer parado mostra "Iniciar"** no apresentador (ex.: fase aberta sem passar pelo
+  conceito), e "Pausar" some no zero.
+
+**Não testado no navegador:** a queda de rede. O comportamento (última leitura fica na tela,
+ressincroniza na volta) é o padrão do `onSnapshot` do Firestore.
