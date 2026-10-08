@@ -41,6 +41,7 @@ import { ConceptOverlay } from '../../slides/concept-overlay/concept-overlay';
 import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { LiveSession } from '../../core/session/live-session';
 import { RoleStore } from '../../core/session/role-store';
+import { SolutionAlerts } from '../../core/session/solution-alerts';
 import { DeckPosition } from '../../slides/deck-navigation';
 import { GameStage } from './game-stage';
 import { GoalPanel } from './goal-panel';
@@ -234,6 +235,7 @@ export class SandboxPage implements OnInit {
   private readonly storage = inject(CodeStorage);
   private readonly briefings = inject(BriefingStore);
   private readonly session = inject(LiveSession);
+  private readonly alerts = inject(SolutionAlerts);
   protected readonly roles = inject(RoleStore);
 
   /**
@@ -423,6 +425,8 @@ export class SandboxPage implements OnInit {
   }
 
   protected showSolution(): void {
+    // Continua livre para o aluno, mas o professor fica sabendo.
+    if (this.roles.isStudent()) void this.alerts.report(this.level().id);
     this.solutionShown.set(true);
     this.code.set({ ...this.level().solution });
   }
