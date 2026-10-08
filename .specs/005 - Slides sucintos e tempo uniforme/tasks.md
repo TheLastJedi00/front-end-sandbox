@@ -82,7 +82,7 @@ linha, então o trecho só fica maior (ex.: `color:` em vez de `color` + `:`).
 - **Q.8 — A dica "Avance para desmontar o código" continua** no componente de anatomia, antes da
   primeira parte: ela é do componente, não do texto do slide, e some no primeiro clique.
 
-**Teste no navegador:** os três conceitos e a abertura foram percorridos clique a clique no
-apresentador (HTML 6 cliques, CSS 9, JS 7, abertura 7), com o aluno acompanhando e a régua só no
-apresentador. A meta de 20s foi conferida na régua (amarela aos 15s), não cronometrada numa aula
+**Teste no navegador:** os conceitos do HTML (6 cliques) e do CSS (9 cliques) foram percorridos
+clique a clique no apresentador; o do JS e a abertura foram conferidos slide a slide na tela, com o
+aluno acompanhando e a régua só no apresentador. A meta de 20s foi conferida na régua (amarela aos 15s), não cronometrada numa aula
 de verdade.
