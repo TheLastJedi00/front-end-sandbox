@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { LiveSession } from '../../core/session/live-session';
+import { RoleStore } from '../../core/session/role-store';
 import { ProgressStore } from '../../core/services/progress-store';
 import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { FIRST_LEVEL, LEVELS } from '../../levels/level-definitions';
@@ -29,12 +31,18 @@ import { FIRST_LEVEL, LEVELS } from '../../levels/level-definitions';
         existe, como aparece e o que acontece.
       </p>
 
-      <div class="actions">
-        <a class="action action--primary" [routerLink]="['/sandbox', firstLevel]">
-          Jogar de novo
-        </a>
-        <a class="action" routerLink="/">Voltar ao início</a>
-      </div>
+      <!-- So o apresentador conduz: o que ele escolhe aqui vale para a turma. -->
+      @if (roles.isPresenter()) {
+        <div class="actions">
+          <a class="action action--primary" [routerLink]="['/sandbox', firstLevel]">
+            Jogar de novo
+          </a>
+          <button class="action" type="button" (click)="restart()">
+            Reiniciar apresentação
+          </button>
+        </div>
+        <p class="note">Reiniciar volta todas as máquinas à abertura e apaga o código da turma.</p>
+      }
     </main>
   `,
   styles: `
@@ -124,6 +132,18 @@ import { FIRST_LEVEL, LEVELS } from '../../levels/level-definitions';
       text-decoration: none;
     }
 
+    button.action {
+      background: transparent;
+      font: inherit;
+      font-weight: 600;
+    }
+
+    .note {
+      margin: 0;
+      color: var(--text-dim);
+      font-size: 0.8125rem;
+    }
+
     .action--primary {
       border-color: transparent;
       background: var(--surface-status);
@@ -142,6 +162,15 @@ export class FinishPage {
   protected readonly progress = inject(ProgressStore);
   protected readonly total = LEVELS.length;
   protected readonly firstLevel = FIRST_LEVEL;
+  protected readonly roles = inject(RoleStore);
+
+  private readonly session = inject(LiveSession);
+  private readonly router = inject(Router);
+
+  protected async restart(): Promise<void> {
+    void this.session.restart();
+    await this.router.navigate(['/']);
+  }
 
   protected readonly recap = [
     {

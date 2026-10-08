@@ -24,6 +24,12 @@ export class BriefingStore {
     this.write();
   }
 
+  /** Aula nova: todos os conceitos voltam a abrir as fases. */
+  reset(): void {
+    this.seen.clear();
+    this.write();
+  }
+
   private read(): readonly number[] {
     if (!this.isBrowser) return [];
 

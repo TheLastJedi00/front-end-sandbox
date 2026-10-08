@@ -49,6 +49,19 @@ export class CodeStorage {
     }
   }
 
+  /** Apaga o codigo de todas as fases: uma aula nova comeca do zero. */
+  clearAll(): void {
+    if (!this.isBrowser) return;
+
+    try {
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith(PREFIX))
+        .forEach((key) => localStorage.removeItem(key));
+    } catch {
+      // Nada a fazer.
+    }
+  }
+
   private isSourceCode(value: unknown): value is SourceCode {
     if (typeof value !== 'object' || value === null) return false;
     const candidate = value as Record<string, unknown>;

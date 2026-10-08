@@ -2,10 +2,16 @@ import { effect, inject, Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { BriefingStore } from '../services/briefing-store';
+import { CodeStorage } from '../services/code-storage';
+import { ProgressStore } from '../services/progress-store';
 import { injectIsBrowser } from '../platform/browser';
 import { LiveSession } from './live-session';
 import { PresentationState, routeOf } from './presentation-state';
 import { RoleStore } from './role-store';
+
+/** Ultima aula que esta maquina viu comecar (o `startedAt` da sessao). */
+const CLASS_KEY = 'sandbox-front-end:v1:aula';
 
 /** Telas de entrada: ali a maquina ainda nao esta na aula, ninguem a puxa. */
 const ENTRY_PATHS = ['/login', '/papel'];
@@ -32,6 +38,9 @@ export class SessionFollower {
   private readonly router = inject(Router);
   private readonly session = inject(LiveSession);
   private readonly roles = inject(RoleStore);
+  private readonly code = inject(CodeStorage);
+  private readonly progress = inject(ProgressStore);
+  private readonly briefings = inject(BriefingStore);
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -51,5 +60,26 @@ export class SessionFollower {
       const target = followTarget(this.url(), state);
       if (target) void this.router.navigateByUrl(target);
     });
+
+    // "Reiniciar apresentacao" muda o `startedAt`: e uma turma nova sentando nas
+    // mesmas maquinas, entao o codigo e o progresso da turma anterior saem.
+    effect(() => {
+      const state = this.session.state();
+      if (!state || !this.session.exists()) return;
+      this.startClass(String(state.startedAt));
+    });
+  }
+
+  private startClass(startedAt: string): void {
+    try {
+      if (localStorage.getItem(CLASS_KEY) === startedAt) return;
+      localStorage.setItem(CLASS_KEY, startedAt);
+    } catch {
+      return;
+    }
+
+    this.code.clearAll();
+    this.progress.reset();
+    this.briefings.reset();
   }
 }

@@ -91,7 +91,9 @@ export function parsePresentationState(data: unknown, now: number): Presentation
     deck: parseDeck(data['deck']),
     conceptOpen: typeof data['conceptOpen'] === 'boolean' ? data['conceptOpen'] : true,
     timer: parseTimer(data['timer']),
-    startedAt: wholeNumber(data['startedAt'], initial.startedAt),
+    // Sem o campo, a aula nao tem comeco conhecido: 0, e nao "agora" — um valor
+    // que mudasse a cada leitura pareceria uma aula nova a cada snapshot.
+    startedAt: wholeNumber(data['startedAt'], 0),
   };
 }
 

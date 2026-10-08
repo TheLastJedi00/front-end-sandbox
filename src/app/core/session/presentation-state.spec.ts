@@ -38,7 +38,12 @@ describe('parsePresentationState', () => {
       { stage: 'qualquer', levelId: 'dois', deck: 'x', conceptOpen: 'sim', timer: 7 },
       NOW,
     );
-    expect(state).toEqual(initialPresentation(NOW));
+    expect(state).toEqual({ ...initialPresentation(NOW), startedAt: 0 });
+  });
+
+  it('documento sem startedAt tem comeco fixo, nao o instante da leitura', () => {
+    expect(parsePresentationState({ stage: 'fase' }, NOW).startedAt).toBe(0);
+    expect(parsePresentationState({ stage: 'fase' }, NOW + 1).startedAt).toBe(0);
   });
 
   it('fase fora do intervalo e limitada as fases que existem', () => {
