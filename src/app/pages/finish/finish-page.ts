@@ -1,14 +1,16 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ProgressStore } from '../../core/services/progress-store';
+import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { FIRST_LEVEL, LEVELS } from '../../levels/level-definitions';
 
 /** Fechamento: amarra os tres conceitos ao que o aluno acabou de construir. */
 @Component({
   selector: 'app-finish-page',
-  imports: [RouterLink],
+  imports: [RouterLink, SessionBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-session-badge class="badge" />
     <main class="page">
       <p class="eyebrow">{{ progress.completedCount() }} de {{ total }} fases concluídas</p>
       <h1 class="title">Isto era o jogo. E você escreveu.</h1>
@@ -36,6 +38,12 @@ import { FIRST_LEVEL, LEVELS } from '../../levels/level-definitions';
     </main>
   `,
   styles: `
+    .badge {
+      position: absolute;
+      inset-block-start: var(--space-4);
+      inset-inline-start: var(--space-4);
+    }
+
     .page {
       display: grid;
       justify-items: center;

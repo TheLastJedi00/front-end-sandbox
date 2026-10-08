@@ -38,6 +38,7 @@ import { ProgressStore } from '../../core/services/progress-store';
 import { BriefingStore } from '../../core/services/briefing-store';
 import { SyntaxCards } from '../../ide/syntax-cards/syntax-cards';
 import { ConceptOverlay } from '../../slides/concept-overlay/concept-overlay';
+import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { GameStage } from './game-stage';
 import { GoalPanel } from './goal-panel';
 import { LevelProgress } from './level-progress';
@@ -57,6 +58,7 @@ import { LevelProgress } from './level-progress';
     LevelProgress,
     ConceptOverlay,
     SyntaxCards,
+    SessionBadge,
   ],
   providers: [GameLoop],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,6 +70,7 @@ import { LevelProgress } from './level-progress';
     <app-ide-shell>
       <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'">
         <app-level-progress [current]="level().id" />
+        <app-session-badge />
       </app-title-bar>
       <app-activity-bar ideActivityBar />
 

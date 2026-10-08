@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { FIRST_LEVEL } from '../../levels/level-definitions';
+import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { SlideDeck } from '../../slides/slide-deck/slide-deck';
 import { OPENING_DECK } from '../../slides/slide-definitions';
 
@@ -10,7 +11,7 @@ import { OPENING_DECK } from '../../slides/slide-definitions';
  */
 @Component({
   selector: 'app-home-page',
-  imports: [SlideDeck],
+  imports: [SlideDeck, SessionBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="page">
@@ -20,6 +21,7 @@ import { OPENING_DECK } from '../../slides/slide-definitions';
         skipLabel="Ir direto ao jogo"
         (finish)="start()"
       />
+      <app-session-badge class="badge" />
     </main>
   `,
   styles: `
@@ -28,7 +30,15 @@ import { OPENING_DECK } from '../../slides/slide-definitions';
       min-block-size: 100dvh;
     }
 
+    .badge {
+      position: absolute;
+      inset-block-start: var(--space-4);
+      inset-inline-start: var(--space-4);
+      z-index: 5;
+    }
+
     .page {
+      position: relative;
       display: grid;
       min-block-size: 100dvh;
       background:
