@@ -42,6 +42,8 @@ import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { LiveSession } from '../../core/session/live-session';
 import { RoleStore } from '../../core/session/role-store';
 import { SolutionAlerts } from '../../core/session/solution-alerts';
+import { IDLE_TIMER } from '../../core/session/phase-timer';
+import { PhaseTimer } from '../../ide/phase-timer/phase-timer';
 import { DeckPosition } from '../../slides/deck-navigation';
 import { GameStage } from './game-stage';
 import { GoalPanel } from './goal-panel';
@@ -63,6 +65,7 @@ import { LevelProgress } from './level-progress';
     ConceptOverlay,
     SyntaxCards,
     SessionBadge,
+    PhaseTimer,
   ],
   providers: [GameLoop],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,6 +83,7 @@ import { LevelProgress } from './level-progress';
     <app-ide-shell>
       <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'">
         <app-level-progress [current]="level().id" [navigable]="roles.isPresenter()" />
+        <app-phase-timer [timer]="timer()" />
         <app-session-badge />
       </app-title-bar>
       <app-activity-bar ideActivityBar />
@@ -268,6 +272,8 @@ export class SandboxPage implements OnInit {
   protected readonly showConcept = computed(
     () => this.liveLevel()?.conceptOpen ?? !this.briefings.wasSeen(this.level().id),
   );
+  /** Timer da fase, como a sessao diz; parado fora dela. */
+  protected readonly timer = computed(() => this.liveLevel()?.timer ?? IDLE_TIMER);
   /** Slide e etapa do conceito em que a turma esta. */
   protected readonly conceptDeck = computed(() => this.liveLevel()?.deck ?? null);
 
