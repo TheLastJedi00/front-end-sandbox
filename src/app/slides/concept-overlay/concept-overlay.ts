@@ -36,6 +36,7 @@ import { SlideDeck } from '../slide-deck/slide-deck';
         skipLabel="Pular"
         [synced]="synced()"
         [followOnly]="followOnly()"
+        [showPace]="!followOnly()"
         (moved)="moved.emit($event)"
         (finish)="dismiss.emit()"
       />

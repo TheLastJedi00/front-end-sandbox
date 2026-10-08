@@ -18,7 +18,7 @@ Outros comandos:
 
 ```bash
 npm run build    # build de produção (com SSR/prerender)
-npm test         # testes (Chrome) — 146, dos quais 3 de integração com o Firestore real
+npm test         # testes (Chrome) — 156, dos quais 3 de integração com o Firestore real
 ```
 
 Os testes de integração usam um usuário de teste do Firebase, lido de `test-credentials.json`
@@ -67,13 +67,27 @@ A abertura e cada fase são decks de slides animados, só com CSS:
 - **Fundo vivo** na cor da linguagem (laranja no HTML, azul no CSS, amarelo no JS).
 
 Antes de cada fase, uma **sequência de sintaxe** desmonta o código parte por parte — cada parte
-acende com o nome dela ("seletor", "condição"…) e a explicação aparece embaixo:
+acende com o nome dela ("seletor", "condição"…) e a explicação aparece embaixo.
 
-| Fase | Slides | O que reforça |
-| --- | --- | --- |
-| 1 — HTML | 5 | anatomia da tag, o que vai entre abertura e fechamento, caixas dentro de caixas, erros comuns |
-| 2 — CSS | 7 | anatomia da regra (seletor, propriedade, valor), seletor ↔ tag, `@animation`, aplicar, erros comuns |
-| 3 — JS | 6 | anatomia do `if`, verdadeiro ou falso, vários `if`, chamar uma ação, erros comuns |
+Todo deck tem **a mesma forma**, para cada etapa da aula durar o mesmo minuto:
+
+| Deck | Slide 1 | Slide 2 | Slide 3 |
+| --- | --- | --- | --- |
+| Abertura | Você vai escrever um jogo | Três linguagens, três papéis | Uma fase por linguagem |
+| 1 — HTML | HTML cria as coisas | Uma tag em três partes | Caixas dentro de caixas |
+| 2 — CSS | O seletor encontra a tag | Uma regra em três partes | Criar a animação e aplicar |
+| 3 — JS | JavaScript reage (sim ou não) | Um `if` em três partes | Cada tecla, um `if` |
+
+- **3 slides por deck, no máximo 3 etapas por slide**, título de até 6 palavras, texto de apoio
+  de até 80 caracteres e até 6 linhas de código. O teste `slide-definitions.spec.ts` reprova
+  qualquer deck fora da forma (`slides/slide-shape.ts`) e qualquer código de slide que daria erro
+  na IDE.
+- **Meta de 20 segundos por slide** (`SLIDE_TARGET_MS` em `slides/slide-pace.ts`). Na máquina do
+  apresentador, uma régua fina no rodapé do deck enche até a meta — verde, amarela a partir de
+  15s e vermelha depois de 20s — e zera a cada troca de slide. Só ele vê, e nada vai para o
+  Firestore.
+- Os erros comuns não têm slide: eles ficam no card de sintaxe da IDE e aparecem no painel de
+  problemas quando acontecem de verdade.
 
 Com `prefers-reduced-motion` ligado no sistema, cada slide já aparece completo, sem etapas.
 
@@ -145,16 +159,41 @@ a conta do professor criada no console e as regras de `firestore.rules` publicad
 
 ## Roteiro de 15 minutos
 
-> As sequências de sintaxe cresceram na spec 003 e ainda não têm limite de slides: o encaixe nos
-> 15 minutos será revisto. Enquanto isso, `Pular` (ou `Esc`) encerra qualquer sequência.
+Cada etapa da aula é **3 slides × 20s = 1 minuto**, e cada fase de programação, **3 minutos** de
+timer. A conta fecha em 14 minutos, com 1 de folga — sem slide para pular na hora.
 
 | Tempo | O quê |
 | --- | --- |
-| 0–2 min | **Deck de abertura** (4 slides): o que é front-end e o papel de cada linguagem. Setas, espaço, `Enter` ou swipe avançam; `Esc` pula |
-| 2–6 min | **Fase 1 — HTML**. A sequência de sintaxe abre sozinha; depois um voluntário escreve as etiquetas. Erre de propósito (`<star>`) e leia o painel de problemas em voz alta |
-| 6–10 min | **Fase 2 — CSS**. Pinte primeiro, anime depois. Pergunte "o que muda entre o início e o meio?" antes de escrever |
-| 10–14 min | **Fase 3 — JavaScript**. Use os botões na tela (ou o teclado, clicando antes no palco); deixe um aluno chegar à bandeira |
-| 14–15 min | Tela final: toda página da internet é feita exatamente assim |
+| 0:00–1:00 | Abertura (3 slides) |
+| 1:00–2:00 | Conceito da Fase 1 — HTML (3 slides) |
+| 2:00–5:00 | Fase 1 programando (timer de 3:00) |
+| 5:00–6:00 | Conceito da Fase 2 — CSS (3 slides) |
+| 6:00–9:00 | Fase 2 programando |
+| 9:00–10:00 | Conceito da Fase 3 — JS (3 slides) |
+| 10:00–13:00 | Fase 3 programando |
+| 13:00–14:00 | Tela final |
+| 14:00–15:00 | Folga |
+
+Uma frase por slide basta — a régua no rodapé diz quando passar:
+
+| Deck | Slide | O que dizer |
+| --- | --- | --- |
+| Abertura | Você vai escrever um jogo | "Hoje vocês escrevem o código de um jogo." |
+| | Três linguagens, três papéis | HTML cria, CSS mostra, JavaScript faz reagir — uma frase por card. |
+| | Uma fase por linguagem | "Três slides, três minutos de código, e o jogo funcionando." |
+| HTML | HTML cria as coisas | "Tudo na tela é um elemento, que abre e fecha." |
+| | Uma tag em três partes | Abertura, conteúdo, fechamento — uma palavra por clique. |
+| | Caixas dentro de caixas | "A bola e o chão ficam dentro do céu." |
+| CSS | CSS diz como as coisas aparecem | "O `ball` do CSS acha o `<ball>` que vocês criaram." |
+| | Uma regra em três partes | Seletor, propriedade, valor. |
+| | Criar a animação e aplicar | Cria, define a altura no meio, aplica na bola. |
+| JS | JavaScript reage ao jogador | "Ele pergunta o tempo todo: sim ou não?" |
+| | Um `if` em três partes | Se, condição, ação. |
+| | Cada tecla, um `if` | "D anda, A volta, espaço pula — ao mesmo tempo." |
+
+Na programação: leia o objetivo nos primeiros segundos e avance quando aparecer **Tempo
+esgotado** — quem não terminou pode usar "Mostrar solução" (o aviso aparece na sua tela), e a
+fase seguinte já começa com o código pronto.
 
 ## A assistência dentro da IDE
 
@@ -252,6 +291,8 @@ Para ir além:
 | Mudar os cards de sintaxe | `src/app/assist/syntax-cards.ts` |
 | Mudar o que o autocomplete oferece | `src/app/assist/vocabulary.ts` |
 | Mudar o que a sugestão de 5 s propõe | `STEPS` em `src/app/assist/ghost-suggestion.ts` |
+| Mudar a forma dos decks (slides, etapas, tamanho do texto) | `SHAPE` em `src/app/slides/slide-shape.ts` |
+| Mudar a meta de tempo por slide | `SLIDE_TARGET_MS` em `src/app/slides/slide-pace.ts` |
 | Mudar a duração do timer | `PHASE_DURATION_MS` em `src/app/core/session/phase-timer.ts` |
 | Mudar quem pode ler e gravar no Firestore | `firestore.rules` + `npx firebase-tools deploy --only firestore:rules` |
 
