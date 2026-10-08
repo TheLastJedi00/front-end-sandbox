@@ -11,6 +11,8 @@ import {
 import { AuthStore } from '../auth/auth-store';
 import { firebase } from '../firebase/firebase';
 import { injectIsBrowser } from '../platform/browser';
+import { DECK_START } from '../../slides/deck-navigation';
+import { IDLE_TIMER } from './phase-timer';
 import { initialPresentation, parsePresentationState, PresentationState } from './presentation-state';
 
 export const SESSIONS = 'sessoes';
@@ -106,6 +108,22 @@ export class LiveSession {
     const uid = this.auth.uid();
     if (!this.isBrowser || !uid) return Promise.resolve();
     return writeSession(firebase().db, uid, patch);
+  }
+
+  /** Leva a turma para uma fase, com o conceito aberto e o timer parado. */
+  enterLevel(levelId: number): Promise<void> {
+    return this.update({
+      stage: 'fase',
+      levelId,
+      deck: DECK_START,
+      conceptOpen: true,
+      timer: IDLE_TIMER,
+    });
+  }
+
+  /** Leva a turma para a tela final. */
+  finish(): Promise<void> {
+    return this.update({ stage: 'fim', timer: IDLE_TIMER });
   }
 
   /** Reiniciar a apresentacao: todos voltam a abertura e a aula recomeca. */
