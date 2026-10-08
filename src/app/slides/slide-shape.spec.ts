@@ -23,7 +23,7 @@ describe('shapeIssues', () => {
       title: 'Um titulo com palavras demais para projetar',
       lead: 'Avance para ver cada parte.',
       points: Array.from({ length: 4 }, (_, i) => ({ label: `p${i}`, text: 'x'.repeat(61) })),
-      code: { lines: ['1', '2', '3', '4', '5', '6'] },
+      code: { lines: ['1', '2', '3', '4', '5', '6', '7'] },
     };
     const issues = shapeIssues('js', [heavy, { ...ok, id: 'b' }, { ...ok, id: 'c' }]);
 
@@ -31,7 +31,7 @@ describe('shapeIssues', () => {
     expect(issues).toContain('pesado: título com 7 palavras, máximo 6');
     expect(issues).toContain('pesado: texto de apoio manda avançar');
     expect(issues).toContain('pesado: ponto "p0" com 61 caracteres, máximo 60');
-    expect(issues).toContain('pesado: 6 linhas de código, máximo 5');
+    expect(issues).toContain('pesado: 7 linhas de código, máximo 6');
   });
 
   it('nota longa de anatomia e texto de apoio longo', () => {

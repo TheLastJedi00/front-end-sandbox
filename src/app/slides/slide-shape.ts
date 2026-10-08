@@ -13,7 +13,7 @@ export const SHAPE = {
   maxLeadChars: 80,
   maxPointChars: 60,
   maxNoteChars: 60,
-  maxCodeLines: 5,
+  maxCodeLines: 6,
 } as const;
 
 /** Frases que mandam o apresentador clicar: o slide nao deve precisar delas. */
