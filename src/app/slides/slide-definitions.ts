@@ -122,86 +122,56 @@ export const OPENING_DECK: readonly SlideDefinition[] = [
   },
 ];
 
-/** Fase 1: o que e HTML e como uma tag e escrita. */
+/** Fase 1: o que e HTML, como uma tag e escrita e quem fica dentro de quem. */
 const HTML_SEQUENCE: readonly SlideDefinition[] = [
   {
     id: 'conceito-html',
     eyebrow: 'fase 1 · HTML',
     title: 'HTML cria as coisas.',
-    lead:
-      'Cada coisa na tela é um elemento, e todo elemento se abre e se fecha. O que está escrito entre a abertura e o fechamento fica dentro dele.',
+    lead: 'Cada coisa na tela é um elemento, que abre e fecha.',
     accent: HTML_ACCENT,
     code: {
       caption: 'index.html',
       language: 'html',
-      lines: ['<sky>', '    <ball></ball>', '</sky>', '', '<!-- a bola está dentro do céu -->'],
+      lines: ['<sky>', '    <ball></ball>', '</sky>'],
     },
   },
   {
     id: 'html-anatomia-tag',
     eyebrow: 'sintaxe · a tag',
-    title: 'Uma tag, peça por peça.',
-    lead: 'Todo elemento do HTML é escrito do mesmo jeito. Avance para ver cada parte.',
+    title: 'Uma tag em três partes.',
     accent: HTML_ACCENT,
     anatomy: {
       caption: 'index.html',
       language: 'html',
-      lines: ['<ball></ball>'],
+      lines: ['<sky><ball></ball></sky>'],
       parts: [
         {
           line: 0,
-          text: '<',
-          label: 'começa a tag',
-          note: 'O sinal de menor avisa o navegador: o que vem agora é o nome de um elemento.',
+          text: '<sky>',
+          label: 'abertura',
+          note: 'O nome entre < e >: o céu começa aqui.',
         },
         {
           line: 0,
-          text: 'ball',
-          label: 'nome',
-          note: 'O nome diz qual elemento é. No nosso jogo existem três: sky, ball e ground.',
+          text: '<ball></ball>',
+          label: 'conteúdo',
+          note: 'O que vem no meio fica dentro do céu.',
         },
         {
           line: 0,
-          text: '>',
-          label: 'termina a tag',
-          note: 'O sinal de maior fecha o nome. Juntos, <ball> é a abertura: a bola começa aqui.',
-        },
-        {
-          line: 0,
-          text: '</ball>',
+          text: '</sky>',
           label: 'fechamento',
-          note: 'O mesmo nome, com uma barra depois do <. Aqui a bola termina.',
+          note: 'O mesmo nome, com uma barra: o céu termina.',
         },
       ],
     },
   },
   {
-    id: 'html-vazio-conteudo',
-    eyebrow: 'sintaxe · o que vai no meio',
-    title: 'Entre a abertura e o fechamento.',
-    lead: 'O espaço entre <ball> e </ball> é o lado de dentro do elemento.',
-    accent: HTML_ACCENT,
-    points: [
-      {
-        label: 'vazio',
-        text: 'Nada no meio: a bola existe, mas não tem nada dentro dela.',
-        code: '<ball></ball>',
-        language: 'html',
-      },
-      {
-        label: 'com conteúdo',
-        text: 'A bola escrita no meio do céu fica dentro do céu.',
-        code: '<sky><ball></ball></sky>',
-        language: 'html',
-      },
-    ],
-  },
-  {
     id: 'html-aninhamento',
     eyebrow: 'sintaxe · dentro de quem',
-    title: 'O código vira caixas dentro de caixas.',
-    lead:
-      'Os espaços no começo da linha não mudam nada para o navegador — eles só ajudam a gente a ver quem está dentro de quem.',
+    title: 'Caixas dentro de caixas.',
+    lead: 'A bola e o chão ficam dentro do céu.',
     accent: HTML_ACCENT,
     code: {
       caption: 'index.html',
@@ -209,33 +179,6 @@ const HTML_SEQUENCE: readonly SlideDefinition[] = [
       lines: ['<sky>', '    <ball></ball>', '    <ground></ground>', '</sky>'],
     },
     tree: { name: 'sky', children: [{ name: 'ball' }, { name: 'ground' }] },
-  },
-  {
-    id: 'html-erros',
-    eyebrow: 'sintaxe · cuidado',
-    title: 'Três jeitos de errar uma tag.',
-    lead: 'Se o painel de problemas reclamar, quase sempre é um destes.',
-    accent: HTML_ACCENT,
-    points: [
-      {
-        label: 'esqueceu a barra',
-        text: 'Sem a barra, o navegador acha que é outra bola abrindo.',
-        code: '<ball><ball>',
-        language: 'html',
-      },
-      {
-        label: 'fechou fora',
-        text: 'Escrita depois de </sky>, a bola fica fora do céu.',
-        code: '<sky></sky><ball></ball>',
-        language: 'html',
-      },
-      {
-        label: 'nome inventado',
-        text: 'Só existem sky, ball e ground. Outro nome não vira nada.',
-        code: '<star></star>',
-        language: 'html',
-      },
-    ],
   },
 ];
 
