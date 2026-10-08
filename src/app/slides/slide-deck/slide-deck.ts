@@ -19,6 +19,7 @@ import {
   stepsOf,
 } from '../deck-navigation';
 import { SlideDefinition } from '../slide-definitions';
+import { PaceBar } from '../pace-bar/pace-bar';
 import { Slide } from '../slide/slide';
 
 /** Distancia minima, em pixels, para um arrasto contar como troca de slide. */
@@ -32,11 +33,12 @@ const SWIPE_MIN = 48;
  *
  * Na aula ao vivo o deck e controlado de fora: a posicao chega por `synced` e
  * cada movimento do apresentador sai por `moved`. Com `followOnly`, a maquina
- * so assiste — sem botoes, teclado, toque ou swipe.
+ * so assiste — sem botoes, teclado, toque ou swipe. Com `showPace`, uma regua
+ * no rodape mede o tempo no slide contra a meta (so na tela de quem conduz).
  */
 @Component({
   selector: 'app-slide-deck',
-  imports: [Slide],
+  imports: [Slide, PaceBar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'slide-deck',
@@ -66,6 +68,9 @@ const SWIPE_MIN = 48;
     </div>
 
     <footer class="controls">
+      @if (showPace()) {
+        <app-pace-bar [slide]="index()" />
+      }
       @if (!followOnly()) {
         <button class="nav" type="button" [disabled]="isFirst()" (click)="previous()">
           <span aria-hidden="true">←</span> Voltar
@@ -252,6 +257,7 @@ const SWIPE_MIN = 48;
     }
 
     .controls {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -364,6 +370,8 @@ export class SlideDeck {
   readonly synced = input<DeckPosition | null>(null);
   /** So assiste: a posicao vem de `synced` e nada aqui a muda. */
   readonly followOnly = input(false);
+  /** Mostra a regua de ritmo (tempo no slide contra a meta). */
+  readonly showPace = input(false);
 
   /** O deck acabou — por ter chegado ao fim ou por ter sido pulado. */
   readonly finish = output<void>();
