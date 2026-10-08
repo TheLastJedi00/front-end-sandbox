@@ -71,39 +71,38 @@ const JS_ACCENT = '#f0db4f';
 
 /**
  * Abertura da apresentacao: o que e front-end e o papel de cada linguagem.
- * Curta, porque a turma quer ver algo acontecer na tela; a sintaxe fica para
- * a sequencia que abre cada fase.
+ * Tres slides, como toda sequencia: a turma quer ver algo acontecer na tela, e
+ * a sintaxe fica para a sequencia que abre cada fase.
  */
 export const OPENING_DECK: readonly SlideDefinition[] = [
   {
     id: 'abertura',
     eyebrow: 'sandbox-front-end',
     title: 'Você vai escrever um jogo.',
-    lead:
-      'Não jogar um jogo pronto: escrever o código dele. As mesmas três linguagens que fazem toda página da internet funcionar.',
+    lead: 'Com as mesmas três linguagens de toda página da internet.',
   },
   {
     id: 'tres-papeis',
     eyebrow: 'as três linguagens',
-    title: 'Cada uma tem um papel.',
+    title: 'Três linguagens, três papéis.',
     points: [
       {
         label: 'HTML',
-        text: 'Cria as coisas e diz quem fica dentro de quem.',
+        text: 'Cria as coisas.',
         code: '<ball></ball>',
         language: 'html',
         accent: HTML_ACCENT,
       },
       {
         label: 'CSS',
-        text: 'Dá cor, tamanho e movimento ao que já existe.',
+        text: 'Diz como elas aparecem.',
         code: 'ball { color: red }',
         language: 'css',
         accent: CSS_ACCENT,
       },
       {
         label: 'JavaScript',
-        text: 'Reage ao jogador e muda o jogo enquanto ele roda.',
+        text: 'Faz o jogo reagir.',
         code: 'if(key("D")) { avancar() }',
         language: 'js',
         accent: JS_ACCENT,
@@ -111,34 +110,14 @@ export const OPENING_DECK: readonly SlideDefinition[] = [
     ],
   },
   {
-    id: 'como-se-juntam',
-    eyebrow: 'como elas se juntam',
-    title: 'O navegador lê as três ao mesmo tempo.',
-    lead:
-      'Você escreve os três arquivos separados. O navegador junta tudo: pega a estrutura do HTML, pinta com o CSS e deixa o JavaScript escutando o que o jogador faz.',
-    code: {
-      caption: 'três arquivos, uma tela',
-      lines: ['index.html   →   o que existe', 'style.css    →   como aparece', 'script.js    →   o que acontece'],
-    },
-  },
-  {
     id: 'como-funciona',
     eyebrow: 'o que vem agora',
-    title: 'Você escreve à esquerda, o jogo responde à direita.',
-    lead: 'São três fases, uma por linguagem. Cada fase tem três momentos:',
+    title: 'Uma fase por linguagem.',
+    lead: 'Você escreve à esquerda, o jogo responde à direita.',
     points: [
-      {
-        label: 'antes',
-        text: 'Alguns slides mostram a sintaxe da linguagem, peça por peça.',
-      },
-      {
-        label: 'durante',
-        text: 'A cada letra digitada, o jogo é redesenhado ao lado do código.',
-      },
-      {
-        label: 'no fim',
-        text: 'A fase só termina quando o jogo faz o que foi pedido.',
-      },
+      { label: 'antes', text: 'Três slides com a sintaxe.' },
+      { label: 'durante', text: 'Três minutos para escrever o código.' },
+      { label: 'no fim', text: 'O jogo faz o que foi pedido.' },
     ],
   },
 ];
