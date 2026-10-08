@@ -86,6 +86,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "test-credentials.json",
+                "input": ".",
+                "output": "/"
               }
             ],
             "styles": [
