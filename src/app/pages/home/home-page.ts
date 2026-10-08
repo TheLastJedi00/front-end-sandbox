@@ -27,6 +27,7 @@ import { OPENING_DECK } from '../../slides/slide-definitions';
         skipLabel="Ir direto ao jogo"
         [synced]="synced()"
         [followOnly]="roles.isStudent()"
+        [showPace]="roles.isPresenter()"
         (moved)="onMoved($event)"
         (finish)="start()"
       />
