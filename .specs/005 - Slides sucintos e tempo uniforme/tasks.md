@@ -1,7 +1,7 @@
 # Tasks — 005 Slides sucintos e tempo uniforme
 
 > Padrão de execução: ver [github-rules](../../.claude/github-rules.md).
-> Branch: `feat/slides-sucintos` (sobre `feat/controle-ao-vivo`, ver **Q.1**) · 1 task = 1 commit · PR contra `main` ao fim da spec.
+> Branch: `feat/slides-sucintos` · 1 task = 1 commit · PR contra `main` ao fim da spec.
 
 ## Visão da arquitetura
 
@@ -63,11 +63,9 @@ linha, então o trecho só fica maior (ex.: `color:` em vez de `color` + `:`).
 
 ## Questões
 
-- **Q.1 — Base da branch.** A PR #4 (spec 004) ainda está aberta e esta spec usa o `Clock`, a sessão e o README dela. Criei a branch sobre `feat/controle-ao-vivo`; quando a #4 for mergeada, a PR desta spec mostra só o que é dela.
-  *Recomendado:* manter assim e mergear a #4 antes da #5.
-- **Q.2 — A barra de ritmo conta por slide ou pelo bloco inteiro (1 minuto)?**
-  *Recomendado:* por slide — é a meta que o apresentador consegue corrigir na hora; o minuto do bloco sai sozinho.
-- **Q.3 — Etapas: "no máximo 3" ou "exatamente 3"?** O slide de conceito de cada fase hoje não tem etapa; forçar 3 obrigaria a inventar pontos.
-  *Recomendado:* no máximo 3. A meta de 20s vale para o slide, com ou sem etapas.
-- **Q.4 — Tela final.** Fica como está (1 minuto, fora dos decks) ou também vira um deck de 3 slides?
-  *Recomendado:* fica como está; ela já é uma tela só e cabe no minuto.
+**Decididas pelo usuário em 2026-10-08 (todas pela recomendação):**
+
+- **Q.1 — Base da branch:** a PR #4 foi mergeada antes; a branch foi rebaseada sobre a `main`. ✅
+- **Q.2 — A barra de ritmo conta por slide**, zerando a cada troca de slide. ✅
+- **Q.3 — No máximo 3 etapas por slide**, não exatamente 3. ✅
+- **Q.4 — A tela final fica como está**, fora dos decks. ✅
