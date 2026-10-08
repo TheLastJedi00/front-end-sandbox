@@ -42,7 +42,13 @@ import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { LiveSession } from '../../core/session/live-session';
 import { RoleStore } from '../../core/session/role-store';
 import { SolutionAlerts } from '../../core/session/solution-alerts';
-import { IDLE_TIMER } from '../../core/session/phase-timer';
+import {
+  IDLE_TIMER,
+  pauseTimer,
+  resetTimer,
+  resumeTimer,
+  startTimer,
+} from '../../core/session/phase-timer';
 import { PhaseTimer } from '../../ide/phase-timer/phase-timer';
 import { DeckPosition } from '../../slides/deck-navigation';
 import { GameStage } from './game-stage';
@@ -83,7 +89,13 @@ import { LevelProgress } from './level-progress';
     <app-ide-shell>
       <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'">
         <app-level-progress [current]="level().id" [navigable]="roles.isPresenter()" />
-        <app-phase-timer [timer]="timer()" />
+        <app-phase-timer
+          [timer]="timer()"
+          [controls]="roles.isPresenter()"
+          (pause)="updateTimer(pauseTimer)"
+          (resume)="updateTimer(resumeTimer)"
+          (restart)="restartTimer()"
+        />
         <app-session-badge />
       </app-title-bar>
       <app-activity-bar ideActivityBar />
@@ -407,7 +419,21 @@ export class SandboxPage implements OnInit {
     if (!this.roles.isPresenter()) return;
 
     this.briefings.markSeen(this.level().id);
-    void this.session.update({ conceptOpen: false });
+    // A turma entra na IDE e os 3 minutos comecam a contar para todos.
+    void this.session.update({ conceptOpen: false, timer: startTimer(Date.now()) });
+  }
+
+  protected readonly pauseTimer = pauseTimer;
+  protected readonly resumeTimer = resumeTimer;
+
+  protected updateTimer(change: typeof pauseTimer): void {
+    if (this.roles.isPresenter()) {
+      void this.session.update({ timer: change(this.timer(), Date.now()) });
+    }
+  }
+
+  protected restartTimer(): void {
+    if (this.roles.isPresenter()) void this.session.update({ timer: resetTimer(Date.now()) });
   }
 
   protected onConceptMoved(deck: DeckPosition): void {
