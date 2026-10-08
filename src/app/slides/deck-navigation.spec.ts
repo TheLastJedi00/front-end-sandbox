@@ -1,6 +1,7 @@
 import {
   advance,
   advanceWhole,
+  clampPosition,
   completed,
   DECK_START,
   retreat,
@@ -86,5 +87,21 @@ describe('sem animacao', () => {
 describe('completed', () => {
   it('posiciona o slide com todas as etapas reveladas', () => {
     expect(completed(deck, 2)).toEqual({ slide: 2, step: 2 });
+  });
+});
+
+describe('clampPosition', () => {
+  it('posicao valida passa como esta', () => {
+    expect(clampPosition(deck, { slide: 1, step: 2 })).toEqual({ slide: 1, step: 2 });
+  });
+
+  it('slide alem do fim vira o ultimo; antes do comeco, o primeiro', () => {
+    expect(clampPosition(deck, { slide: 9, step: 0 })).toEqual({ slide: 2, step: 0 });
+    expect(clampPosition(deck, { slide: -1, step: 0 })).toEqual(DECK_START);
+  });
+
+  it('etapa alem das que o slide tem vira o slide completo', () => {
+    expect(clampPosition(deck, { slide: 0, step: 5 })).toEqual({ slide: 0, step: 0 });
+    expect(clampPosition(deck, { slide: 2, step: 7 })).toEqual({ slide: 2, step: 2 });
   });
 });

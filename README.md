@@ -4,21 +4,30 @@ Um sandbox interativo para apresentar HTML, CSS e JavaScript em **15 minutos**, 
 O aluno escreve o código de um jogo simples — inspirado em Bounce Tales — dentro de uma tela
 que imita um editor de verdade, e vê o resultado ao lado, na hora.
 
-Feito em Angular 20 (standalone, signals, zoneless).
+Feito em Angular 20 (standalone, signals, zoneless). O professor conduz a aula **ao vivo em todas
+as máquinas da sala** pelo Firebase (Auth + Firestore).
 
 ## Rodar
 
 ```bash
 npm install
-npm start        # http://localhost:4200
+npm start        # http://localhost:4200 — pede o login do professor
 ```
 
 Outros comandos:
 
 ```bash
 npm run build    # build de produção (com SSR/prerender)
-npm test         # testes unitários (Chrome) — 106 testes
+npm test         # testes (Chrome) — 146, dos quais 3 de integração com o Firestore real
 ```
+
+Os testes de integração usam um usuário de teste do Firebase, lido de `test-credentials.json`
+na raiz (ignorado pelo git — copie de `test-credentials.example.json`). Sem o arquivo, eles são
+pulados e o resto roda normalmente. A sessão que existia antes dos testes é devolvida no fim.
+
+Para testar apresentador e aluno no mesmo computador, abra `http://localhost:4200` numa aba e
+`http://aluno.localhost:4200` em outra: são origens diferentes, cada uma com o seu login e o seu
+papel.
 
 ## As três fases
 
@@ -41,8 +50,8 @@ Cada fase é conferida por **equivalência semântica**, nunca por comparação 
 quebras de linha e a ordem das regras ficam por conta do aluno. Só as cores do enunciado
 (`blue`, `red`, `green`) são exigidas exatamente.
 
-Rotas: `/` (deck de abertura), `/sandbox/1..3` (as fases, cada uma abrindo com a sequência de
-slides da sua ferramenta) e `/fim` (fechamento).
+Rotas: `/login`, `/papel` (apresentador ou aluno), `/` (deck de abertura), `/sandbox/1..3` (as
+fases, cada uma abrindo com a sequência de slides da sua ferramenta) e `/fim` (fechamento).
 
 ## A apresentação
 
@@ -67,6 +76,72 @@ acende com o nome dela ("seletor", "condição"…) e a explicação aparece emb
 | 3 — JS | 6 | anatomia do `if`, verdadeiro ou falso, vários `if`, chamar uma ação, erros comuns |
 
 Com `prefers-reduced-motion` ligado no sistema, cada slide já aparece completo, sem etapas.
+
+## A aula ao vivo
+
+O professor faz login com a conta dele **em cada máquina** da sala. Logo depois, cada máquina
+escolhe quem é:
+
+- **Entrar como apresentador** — a máquina do professor (a do projetor). Os botões de navegação
+  dela conduzem a turma inteira.
+- **Entrar como aluno** — as máquinas da turma. Elas seguem o apresentador: sem botões de
+  navegação no deck, sem "Próxima fase", e a trilha de fases não é clicável.
+
+A escolha fica na máquina (um F5 não pergunta de novo); **Sair** desloga e esquece o papel.
+
+O que o apresentador faz, todas as máquinas veem na hora:
+
+| Apresentador | Alunos |
+| --- | --- |
+| Avança ou volta um slide (ou uma etapa) na abertura | Mesmo slide, mesma etapa |
+| Termina a abertura ou pula para o jogo | Vão para a fase 1, com o conceito aberto |
+| Avança no conceito da fase e fecha para começar | Mesmo slide; a IDE abre quando ele fecha |
+| "Próxima fase" / "Ver o resultado" | Vão para a próxima fase / para o fim |
+| "Reiniciar apresentação" no fim | Voltam à abertura, com o código da turma anterior apagado |
+
+Quem entra no meio da aula (ou dá F5) cai direto onde a turma está. O apresentador que dá F5 na
+abertura também volta para onde a turma estava.
+
+O **código de cada aluno é local**: não vai para o Firestore. Dicas, cards de sintaxe e
+"Reiniciar fase" também são de cada máquina. **Mostrar solução** continua livre para o aluno,
+mas avisa o professor: aparece um popup na tela do apresentador ("Uma máquina mostrou a solução
+da fase 1" — vários avisos seguidos da mesma fase viram um só, contando as máquinas).
+
+### Timer de 3 minutos
+
+Cada fase de programação tem **3 minutos**, que começam quando o apresentador fecha o conceito.
+O relógio fica na barra de título de todas as máquinas, fica amarelo no último minuto e vermelho
+no zero. O apresentador pode **pausar/retomar** e **reiniciar**. No zero, todas as máquinas
+mostram "Tempo esgotado" — o editor continua funcionando, e avançar é decisão do professor.
+
+O Firestore guarda só quando o timer acaba (`endsAt`), ou quanto falta quando está pausado: cada
+máquina conta sozinha, sem gravar nada a cada segundo. Os relógios das máquinas precisam estar
+certos (poucos segundos de diferença não atrapalham).
+
+### Como funciona
+
+Tudo vive num documento só, `sessoes/{uid}`. Como todas as máquinas usam a conta do professor,
+todas leem o mesmo documento — não há código de sala. Os alunos escutam o documento com
+`onSnapshot`, o canal em tempo real do Firestore (conexão aberta, sem polling e sem servidor
+próprio); só o apresentador grava. Os avisos de solução vão para `sessoes/{uid}/alertas`.
+
+| Campo | O que guarda |
+| --- | --- |
+| `stage` | `abertura`, `fase` ou `fim` |
+| `levelId` | a fase atual |
+| `deck` | slide e etapa do deck na tela |
+| `conceptOpen` | se o conceito ainda está por cima da IDE |
+| `timer` | `status`, `endsAt` e `remainingMs` |
+| `startedAt` | quando a aula começou — muda em "Reiniciar apresentação" |
+
+Se a rede cair, a máquina fica com o último estado recebido e o aluno continua programando;
+quando a rede volta, ela se ressincroniza. Uma aula de 30 máquinas gasta alguns milhares de
+leituras, bem dentro da cota gratuita.
+
+**Configuração do Firebase** (projeto `front-end-sandbox-91f5f`): provedor E-mail/senha ativado,
+a conta do professor criada no console e as regras de `firestore.rules` publicadas com
+`npx firebase-tools deploy --only firestore:rules`. As regras deixam cada usuário ler e gravar só
+`sessoes/{o próprio uid}`. A configuração web em `core/firebase/firebase.ts` não é segredo.
 
 ## Roteiro de 15 minutos
 
@@ -101,8 +176,9 @@ Quatro recursos ajudam o aluno a não travar na frente da turma:
   a solução na tela.
 
 Botões que salvam a apresentação: **Dica** (revela uma por vez), **Sintaxe**, **Mostrar solução**
-e **Reiniciar fase**. A trilha no topo pula direto para qualquer fase, sem exigir a anterior.
-O código e o progresso ficam salvos no navegador — um F5 acidental não apaga nada.
+e **Reiniciar fase**. Na máquina do apresentador, a trilha no topo pula direto para qualquer
+fase (e leva a turma junto), sem exigir a anterior. O código e o progresso ficam salvos no
+navegador — um F5 acidental não apaga nada.
 
 Na fase 3 há controles na tela (`A`, `espaço`, `D`) além do teclado, para funcionar em tablets.
 Os botões apertam exatamente as mesmas teclas que o código do aluno escuta, então
@@ -115,8 +191,12 @@ nada.
 src/app/
   core/
     models/          Level, SourceFile, GameState, Diagnostic, ValidationResult
-    platform/        acesso ao browser isolado (o app tem SSR)
+    platform/        acesso ao browser isolado (o app tem SSR) e o relógio (Clock)
     services/        progresso, código e slides já vistos, salvos no navegador
+    firebase/        config e init do Firebase, só no navegador
+    auth/            AuthStore (login) e guards das rotas
+    session/         a aula ao vivo: papel da máquina, estado da sessão, timer,
+                     LiveSession (Firestore), SessionFollower e alertas de solução
   assist/            TypeScript puro: vocabulary, completion, ghost-suggestion,
                      syntax-cards — a assistência da IDE, testável sem DOM
   slides/            deck de apresentação: slide, slide-deck, concept-overlay,
@@ -128,9 +208,11 @@ src/app/
     validation/      level-validator
   ide/               casca visual: title-bar, activity-bar, file-tabs,
                      code-editor (+ highlight), problems-panel,
-                     game-preview (+ preview-input, touch-controls), status-bar
+                     game-preview (+ preview-input, touch-controls), status-bar,
+                     phase-timer
   levels/            level-definitions.ts — as três fases como dados
-  pages/             home, sandbox (goal-panel, level-progress, game-stage), finish
+  pages/             login, role, home, sandbox (goal-panel, level-progress,
+                     game-stage), finish
 ```
 
 `engine/` não conhece Angular: recebe texto e devolve árvore, cena e resultado. `ide/` só
@@ -145,8 +227,11 @@ Três decisões que explicam o resto do código:
 - **O estado por quadro fica isolado** em `pages/sandbox/game-stage.ts`, para que a página não
   seja reavaliada 60 vezes por segundo.
 - **A "IA" da IDE é determinística e local** (`assist/ghost-suggestion.ts`): ela conhece os
-  passos da fase, não um modelo. Numa escola isso significa zero rede, zero chave de API e
-  nenhuma resposta imprevisível na frente da turma.
+  passos da fase, não um modelo. Zero chave de API e nenhuma resposta imprevisível na frente da
+  turma — a única rede do app é a sessão ao vivo.
+- **A sessão ao vivo é lógica pura por baixo** (`core/session/presentation-state.ts`,
+  `phase-timer.ts`, `session-follower.ts`): ler o documento, calcular o timer e decidir a rota
+  são funções testáveis sem Firebase; o Firestore só leva e traz o estado.
 
 ## Mexer nas fases
 
@@ -167,6 +252,8 @@ Para ir além:
 | Mudar os cards de sintaxe | `src/app/assist/syntax-cards.ts` |
 | Mudar o que o autocomplete oferece | `src/app/assist/vocabulary.ts` |
 | Mudar o que a sugestão de 5 s propõe | `STEPS` em `src/app/assist/ghost-suggestion.ts` |
+| Mudar a duração do timer | `PHASE_DURATION_MS` em `src/app/core/session/phase-timer.ts` |
+| Mudar quem pode ler e gravar no Firestore | `firestore.rules` + `npx firebase-tools deploy --only firestore:rules` |
 
 ## Processo
 

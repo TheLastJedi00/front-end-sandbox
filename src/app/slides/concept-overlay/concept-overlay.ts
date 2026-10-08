@@ -9,6 +9,7 @@ import {
   output,
 } from '@angular/core';
 import { LevelConcept } from '../../core/models';
+import { DeckPosition } from '../deck-navigation';
 import { conceptSlides } from '../slide-definitions';
 import { SlideDeck } from '../slide-deck/slide-deck';
 
@@ -33,6 +34,9 @@ import { SlideDeck } from '../slide-deck/slide-deck';
         [slides]="slides()"
         finishLabel="Começar a escrever"
         skipLabel="Pular"
+        [synced]="synced()"
+        [followOnly]="followOnly()"
+        (moved)="moved.emit($event)"
         (finish)="dismiss.emit()"
       />
     </div>
@@ -79,9 +83,15 @@ import { SlideDeck } from '../slide-deck/slide-deck';
 })
 export class ConceptOverlay {
   readonly concept = input.required<LevelConcept>();
+  /** Posicao vinda da sessao ao vivo (ver `SlideDeck`). */
+  readonly synced = input<DeckPosition | null>(null);
+  /** Maquina do aluno: assiste ate o professor fechar o conceito para todos. */
+  readonly followOnly = input(false);
 
   /** O aluno comecou a fase — por ter chegado ao fim ou por ter pulado. */
   readonly dismiss = output<void>();
+  /** Cada movimento do apresentador no mini-deck. */
+  readonly moved = output<DeckPosition>();
 
   protected readonly slides = computed(() => conceptSlides(this.concept()));
 

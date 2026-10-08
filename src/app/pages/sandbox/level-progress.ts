@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProgressStore } from '../../core/services/progress-store';
 import { LEVELS } from '../../levels/level-definitions';
@@ -6,10 +7,12 @@ import { LEVELS } from '../../levels/level-definitions';
 /**
  * Trilha das tres fases. Os links ficam sempre livres: numa apresentacao de 15
  * minutos quem conduz precisa poder pular uma etapa sem refazer a anterior.
+ * Na maquina do aluno a trilha so mostra onde a turma esta: quem troca de fase
+ * e o professor.
  */
 @Component({
   selector: 'app-level-progress',
-  imports: [RouterLink],
+  imports: [RouterLink, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'level-progress' },
   template: `
@@ -17,22 +20,37 @@ import { LEVELS } from '../../levels/level-definitions';
       <ol class="steps">
         @for (level of levels; track level.id) {
           <li class="step">
-            <a
-              class="link"
-              [class.link--current]="level.id === current()"
-              [class.link--done]="progress.isCompleted(level.id)"
-              [routerLink]="['/sandbox', level.id]"
-              [attr.aria-current]="level.id === current() ? 'page' : null"
-            >
-              <span class="mark" aria-hidden="true">
-                {{ progress.isCompleted(level.id) ? '✓' : level.id }}
+            @if (navigable()) {
+              <a
+                class="link"
+                [class.link--current]="level.id === current()"
+                [class.link--done]="progress.isCompleted(level.id)"
+                [routerLink]="['/sandbox', level.id]"
+                [attr.aria-current]="level.id === current() ? 'page' : null"
+              >
+                <ng-container *ngTemplateOutlet="content; context: { $implicit: level }" />
+              </a>
+            } @else {
+              <span
+                class="link"
+                [class.link--current]="level.id === current()"
+                [class.link--done]="progress.isCompleted(level.id)"
+                [attr.aria-current]="level.id === current() ? 'step' : null"
+              >
+                <ng-container *ngTemplateOutlet="content; context: { $implicit: level }" />
               </span>
-              <span class="name">{{ level.concept }}</span>
-            </a>
+            }
           </li>
         }
       </ol>
     </nav>
+
+    <ng-template #content let-level>
+      <span class="mark" aria-hidden="true">
+        {{ progress.isCompleted(level.id) ? '✓' : level.id }}
+      </span>
+      <span class="name">{{ level.concept }}</span>
+    </ng-template>
   `,
   styles: `
     .steps {
@@ -81,6 +99,8 @@ import { LEVELS } from '../../levels/level-definitions';
 })
 export class LevelProgress {
   readonly current = input.required<number>();
+  /** Os itens sao links. Desligado na maquina do aluno. */
+  readonly navigable = input(true);
 
   protected readonly progress = inject(ProgressStore);
   protected readonly levels = LEVELS;

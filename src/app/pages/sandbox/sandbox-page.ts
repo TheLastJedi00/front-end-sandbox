@@ -1,5 +1,4 @@
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -10,6 +9,7 @@ import {
   numberAttribute,
   signal,
   OnInit,
+  untracked,
 } from '@angular/core';
 import {
   Diagnostic,
@@ -38,6 +38,21 @@ import { ProgressStore } from '../../core/services/progress-store';
 import { BriefingStore } from '../../core/services/briefing-store';
 import { SyntaxCards } from '../../ide/syntax-cards/syntax-cards';
 import { ConceptOverlay } from '../../slides/concept-overlay/concept-overlay';
+import { SessionBadge } from '../../core/session/session-badge/session-badge';
+import { LiveSession } from '../../core/session/live-session';
+import { RoleStore } from '../../core/session/role-store';
+import { SolutionAlerts } from '../../core/session/solution-alerts';
+import { Clock } from '../../core/platform/clock';
+import {
+  IDLE_TIMER,
+  isExpired,
+  pauseTimer,
+  resetTimer,
+  resumeTimer,
+  startTimer,
+} from '../../core/session/phase-timer';
+import { PhaseTimer } from '../../ide/phase-timer/phase-timer';
+import { DeckPosition } from '../../slides/deck-navigation';
 import { GameStage } from './game-stage';
 import { GoalPanel } from './goal-panel';
 import { LevelProgress } from './level-progress';
@@ -57,17 +72,33 @@ import { LevelProgress } from './level-progress';
     LevelProgress,
     ConceptOverlay,
     SyntaxCards,
+    SessionBadge,
+    PhaseTimer,
   ],
   providers: [GameLoop],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (showConcept()) {
-      <app-concept-overlay [concept]="level().concept" (dismiss)="startLevel()" />
+      <app-concept-overlay
+        [concept]="level().concept"
+        [synced]="conceptDeck()"
+        [followOnly]="roles.isStudent()"
+        (moved)="onConceptMoved($event)"
+        (dismiss)="startLevel()"
+      />
     }
 
     <app-ide-shell>
       <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'">
-        <app-level-progress [current]="level().id" />
+        <app-level-progress [current]="level().id" [navigable]="roles.isPresenter()" />
+        <app-phase-timer
+          [timer]="timer()"
+          [controls]="roles.isPresenter()"
+          (pause)="updateTimer(pauseTimer)"
+          (resume)="updateTimer(resumeTimer)"
+          (restart)="restartTimer()"
+        />
+        <app-session-badge />
       </app-title-bar>
       <app-activity-bar ideActivityBar />
 
@@ -114,12 +145,29 @@ import { LevelProgress } from './level-progress';
             </p>
           }
 
+          @if (timeUp() && !validation().completed) {
+            <div class="time-up" role="alert">
+              <strong>Tempo esgotado!</strong>
+              <span>
+                {{
+                  roles.isPresenter()
+                    ? 'Avance quando a turma estiver pronta.'
+                    : 'Pode terminar o que está fazendo — o professor decide quando seguir.'
+                }}
+              </span>
+            </div>
+          }
+
           @if (validation().completed) {
             <div class="done" role="status">
               <strong>Fase concluída!</strong>
-              <button type="button" class="next" (click)="goToNext()">
-                {{ isLast() ? 'Ver o resultado' : 'Próxima fase' }}
-              </button>
+              @if (roles.isPresenter()) {
+                <button type="button" class="next" (click)="goToNext()">
+                  {{ isLast() ? 'Ver o resultado' : 'Próxima fase' }}
+                </button>
+              } @else {
+                <span class="wait">O professor leva a turma para a próxima etapa.</span>
+              }
             </div>
           }
         </div>
@@ -186,6 +234,24 @@ import { LevelProgress } from './level-progress';
       color: var(--text-primary);
     }
 
+    .time-up {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: var(--space-2) var(--space-3);
+      margin-block-start: var(--space-4);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--state-error) 18%, var(--surface-raised));
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+
+    .wait {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
     .next {
       padding: var(--space-2) var(--space-4);
       border: none;
@@ -212,6 +278,9 @@ export class SandboxPage implements OnInit {
   private readonly progress = inject(ProgressStore);
   private readonly storage = inject(CodeStorage);
   private readonly briefings = inject(BriefingStore);
+  private readonly session = inject(LiveSession);
+  private readonly alerts = inject(SolutionAlerts);
+  protected readonly roles = inject(RoleStore);
 
   /**
    * Cada incremento leva o cursor de volta ao editor. Os cards de sintaxe cobrem
@@ -230,13 +299,26 @@ export class SandboxPage implements OnInit {
   });
   protected readonly activeFile = linkedSignal<SourceFileId>(() => this.level().focusFile);
 
+  /** A sessao ao vivo, quando ela fala desta fase. */
+  private readonly liveLevel = computed(() => {
+    const state = this.session.state();
+    return state?.stage === 'fase' && state.levelId === this.level().id ? state : null;
+  });
+
   /**
-   * O slide de conceito abre a fase apenas na primeira vez: numa apresentacao de
-   * 15 minutos, quem volta a uma fase nao pode esperar o slide de novo.
+   * Quem abre e fecha o conceito e o professor, para a turma toda. Sem a sessao
+   * desta fase, vale a regra local: o slide abre a fase so na primeira vez.
    */
-  protected readonly showConcept = linkedSignal<boolean>(
-    () => !this.briefings.wasSeen(this.level().id),
+  protected readonly showConcept = computed(
+    () => this.liveLevel()?.conceptOpen ?? !this.briefings.wasSeen(this.level().id),
   );
+  /** Timer da fase, como a sessao diz; parado fora dela. */
+  protected readonly timer = computed(() => this.liveLevel()?.timer ?? IDLE_TIMER);
+  private readonly clock = inject(Clock);
+  /** Os 3 minutos acabaram. So avisa: o editor continua livre. */
+  protected readonly timeUp = computed(() => isExpired(this.timer(), this.clock.now()));
+  /** Slide e etapa do conceito em que a turma esta. */
+  protected readonly conceptDeck = computed(() => this.liveLevel()?.deck ?? null);
 
   /**
    * A sugestao automatica cala a boca quando nao tem mais o que ajudar: fase
@@ -314,9 +396,23 @@ export class SandboxPage implements OnInit {
   );
 
   constructor() {
-    // Sem o slide de conceito na frente, a fase ja abre com o cursor no editor.
-    afterNextRender(() => {
-      if (!this.showConcept()) this.askFocus();
+    // Sem o slide de conceito na frente, a fase ja abre com o cursor no editor —
+    // tambem quando e o professor que fecha o conceito para a turma.
+    effect(() => {
+      if (!this.showConcept()) untracked(() => this.askFocus());
+    });
+
+    // O apresentador que chega a uma fase por conta propria (pela trilha) leva a
+    // turma junto. So na chegada a cada fase (a pagina e reaproveitada entre
+    // elas): depois disso, quem muda a sessao sao os botoes.
+    let arrivedAt: number | null = null;
+    effect(() => {
+      const level = this.level().id;
+      const state = this.session.state();
+      if (arrivedAt === level || !state || !this.roles.isPresenter()) return;
+
+      arrivedAt = level;
+      if (state.stage !== 'fase' || state.levelId !== level) void this.session.enterLevel(level);
     });
 
     effect(() => {
@@ -351,9 +447,28 @@ export class SandboxPage implements OnInit {
   }
 
   protected startLevel(): void {
+    if (!this.roles.isPresenter()) return;
+
     this.briefings.markSeen(this.level().id);
-    this.showConcept.set(false);
-    this.askFocus();
+    // A turma entra na IDE e os 3 minutos comecam a contar para todos.
+    void this.session.update({ conceptOpen: false, timer: startTimer(Date.now()) });
+  }
+
+  protected readonly pauseTimer = pauseTimer;
+  protected readonly resumeTimer = resumeTimer;
+
+  protected updateTimer(change: typeof pauseTimer): void {
+    if (this.roles.isPresenter()) {
+      void this.session.update({ timer: change(this.timer(), Date.now()) });
+    }
+  }
+
+  protected restartTimer(): void {
+    if (this.roles.isPresenter()) void this.session.update({ timer: resetTimer(Date.now()) });
+  }
+
+  protected onConceptMoved(deck: DeckPosition): void {
+    if (this.roles.isPresenter()) void this.session.update({ deck });
   }
 
   private askFocus(): void {
@@ -361,8 +476,11 @@ export class SandboxPage implements OnInit {
   }
 
   protected goToNext(): void {
+    if (!this.roles.isPresenter()) return;
+
     const next = this.level().id + 1;
-    this.router.navigate(next > LAST_LEVEL ? ['/fim'] : ['/sandbox', next]);
+    void (next > LAST_LEVEL ? this.session.finish() : this.session.enterLevel(next));
+    void this.router.navigate(next > LAST_LEVEL ? ['/fim'] : ['/sandbox', next]);
   }
 
   protected revealHint(): void {
@@ -370,6 +488,8 @@ export class SandboxPage implements OnInit {
   }
 
   protected showSolution(): void {
+    // Continua livre para o aluno, mas o professor fica sabendo.
+    if (this.roles.isStudent()) void this.alerts.report(this.level().id);
     this.solutionShown.set(true);
     this.code.set({ ...this.level().solution });
   }

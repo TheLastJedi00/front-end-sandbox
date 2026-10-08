@@ -5,12 +5,12 @@ import {
   input,
   linkedSignal,
   output,
-  signal,
 } from '@angular/core';
 import { injectIsBrowser } from '../../core/platform/browser';
 import {
   advance,
   advanceWhole,
+  clampPosition,
   completed,
   DECK_START,
   DeckPosition,
@@ -29,6 +29,10 @@ const SWIPE_MIN = 48;
  *
  * Teclado e toque funcionam juntos porque as duas coisas acontecem — a aula e
  * projetada de um notebook, mas os alunos acompanham em tablets.
+ *
+ * Na aula ao vivo o deck e controlado de fora: a posicao chega por `synced` e
+ * cada movimento do apresentador sai por `moved`. Com `followOnly`, a maquina
+ * so assiste — sem botoes, teclado, toque ou swipe.
  */
 @Component({
   selector: 'app-slide-deck',
@@ -62,9 +66,11 @@ const SWIPE_MIN = 48;
     </div>
 
     <footer class="controls">
-      <button class="nav" type="button" [disabled]="isFirst()" (click)="previous()">
-        <span aria-hidden="true">←</span> Voltar
-      </button>
+      @if (!followOnly()) {
+        <button class="nav" type="button" [disabled]="isFirst()" (click)="previous()">
+          <span aria-hidden="true">←</span> Voltar
+        </button>
+      }
 
       <ol class="dots" [attr.aria-label]="'Slide ' + (index() + 1) + ' de ' + total()">
         @for (slide of slides(); track slide.id; let i = $index) {
@@ -77,6 +83,7 @@ const SWIPE_MIN = 48;
               [style.--fill.%]="i === index() ? stepProgress() : null"
               [attr.aria-label]="'Ir para o slide ' + (i + 1)"
               [attr.aria-current]="i === index() ? 'true' : null"
+              [disabled]="followOnly()"
               (click)="go(i)"
             ></button>
           </li>
@@ -84,12 +91,18 @@ const SWIPE_MIN = 48;
       </ol>
 
       <!-- Um botao so, com o texto trocando: o foco nao se perde no ultimo slide. -->
-      <button class="nav nav--primary" type="button" (click)="next()">
-        {{ atEnd() ? finishLabel() : 'Avançar' }} <span aria-hidden="true">→</span>
-      </button>
+      @if (followOnly()) {
+        <p class="following">Acompanhando o professor</p>
+      } @else {
+        <button class="nav nav--primary" type="button" (click)="next()">
+          {{ atEnd() ? finishLabel() : 'Avançar' }} <span aria-hidden="true">→</span>
+        </button>
+      }
     </footer>
 
-    <button class="skip" type="button" (click)="finish.emit()">{{ skipLabel() }}</button>
+    @if (!followOnly()) {
+      <button class="skip" type="button" (click)="finish.emit()">{{ skipLabel() }}</button>
+    }
 
     <!-- Titulo ao trocar de slide; cada ponto quando ele aparece. As partes da
          anatomia tem o seu proprio anuncio, dentro do componente. -->
@@ -314,6 +327,16 @@ const SWIPE_MIN = 48;
       font-size: 0.875rem;
     }
 
+    .dot:disabled {
+      cursor: default;
+    }
+
+    .following {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
     .live {
       position: absolute;
       inline-size: 1px;
@@ -337,8 +360,15 @@ export class SlideDeck {
   readonly finishLabel = input('Começar');
   readonly skipLabel = input('Pular apresentação');
 
+  /** Posicao vinda da sessao ao vivo; `null` quando o deck anda sozinho. */
+  readonly synced = input<DeckPosition | null>(null);
+  /** So assiste: a posicao vem de `synced` e nada aqui a muda. */
+  readonly followOnly = input(false);
+
   /** O deck acabou — por ter chegado ao fim ou por ter sido pulado. */
   readonly finish = output<void>();
+  /** Cada movimento feito aqui, para o apresentador gravar na sessao. */
+  readonly moved = output<DeckPosition>();
 
   /**
    * Quem pediu menos movimento ao sistema ve cada slide ja completo: revelar
@@ -348,9 +378,15 @@ export class SlideDeck {
     injectIsBrowser() && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /** Slide atual e quantas etapas dele ja apareceram. */
-  protected readonly position = linkedSignal<DeckPosition>(() =>
-    this.reducedMotion ? completed(this.slides(), 0) : DECK_START,
-  );
+  protected readonly position = linkedSignal<DeckPosition>(() => {
+    const slides = this.slides();
+    const synced = this.synced();
+    if (synced) {
+      const position = clampPosition(slides, synced);
+      return this.reducedMotion ? completed(slides, position.slide) : position;
+    }
+    return this.reducedMotion ? completed(slides, 0) : DECK_START;
+  });
   protected readonly index = computed(() => this.position().slide);
   protected readonly total = computed(() => this.slides().length);
   protected readonly current = computed(() => this.slides()[this.index()]);
@@ -376,8 +412,19 @@ export class SlideDeck {
   });
   /** Lista de um item so: e o `track` dela que recria o slide a cada troca. */
   protected readonly shown = computed(() => [this.current()]);
-  /** Para onde a apresentacao andou por ultimo — decide o lado da transicao. */
-  protected readonly direction = signal<'forward' | 'backward'>('forward');
+  /**
+   * Para onde a apresentacao andou por ultimo — decide o lado da transicao.
+   * Vem da propria posicao, entao vale tambem para o que chega pela sessao.
+   */
+  protected readonly direction = linkedSignal<DeckPosition, 'forward' | 'backward'>({
+    source: this.position,
+    computation: (position, previous) => {
+      if (!previous || position.slide === previous.source.slide) {
+        return previous?.value ?? 'forward';
+      }
+      return position.slide > previous.source.slide ? 'forward' : 'backward';
+    },
+  });
 
   private pointerStartX: number | null = null;
   /** Um arrasto ja trocou o slide; o `click` que vem depois dele nao conta. */
@@ -406,14 +453,13 @@ export class SlideDeck {
   }
 
   private moveTo(target: DeckPosition): void {
-    const from = this.index();
-    if (target.slide !== from) {
-      this.direction.set(target.slide > from ? 'forward' : 'backward');
-    }
+    if (this.followOnly()) return;
     this.position.set(target);
+    this.moved.emit(target);
   }
 
   protected onKeydown(event: KeyboardEvent): void {
+    if (this.followOnly()) return;
     switch (event.key) {
       case 'ArrowRight':
       case 'PageDown':
@@ -434,6 +480,7 @@ export class SlideDeck {
   }
 
   protected onPointerDown(event: PointerEvent): void {
+    if (this.followOnly()) return;
     this.swiped = false;
     this.pointerStartX = event.pointerType === 'touch' ? event.clientX : null;
   }
@@ -456,6 +503,7 @@ export class SlideDeck {
    * botoes que continuam sendo o caminho obvio; isto e um atalho.
    */
   protected onStageClick(event: MouseEvent): void {
+    if (this.followOnly()) return;
     if (this.swiped) {
       this.swiped = false;
       return;

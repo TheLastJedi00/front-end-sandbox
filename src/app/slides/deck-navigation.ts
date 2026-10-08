@@ -70,3 +70,15 @@ export function retreat(
   if (slide > 0) return completed(slides, slide - 1);
   return { slide, step };
 }
+
+/**
+ * Traz para dentro do deck uma posicao vinda de fora (a sessao ao vivo): um
+ * slide ou etapa que nao existe aqui vira o mais proximo que existe.
+ */
+export function clampPosition(
+  slides: readonly SlideDefinition[],
+  { slide, step }: DeckPosition,
+): DeckPosition {
+  const index = Math.min(Math.max(slide, 0), slides.length - 1);
+  return { slide: index, step: Math.min(Math.max(step, 0), stepsOf(slides[index])) };
+}
