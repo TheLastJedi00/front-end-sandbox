@@ -267,26 +267,36 @@ const CSS_SEQUENCE: readonly SlideDefinition[] = [
   },
 ];
 
-/** Fase 3: o que e JavaScript e como uma condicao e escrita. */
+/** Fase 3: o que e JavaScript, como uma condicao e escrita e uma tecla por if. */
 const JS_SEQUENCE: readonly SlideDefinition[] = [
   {
     id: 'conceito-js',
     eyebrow: 'fase 3 · JavaScript',
     title: 'JavaScript reage ao jogador.',
-    lead:
-      'Aqui o código não descreve, ele decide. "Se a tecla D estiver apertada, avance" — e isso é verificado muitas vezes por segundo, enquanto o jogo roda.',
+    lead: 'Ele pergunta o tempo todo: a tecla está apertada?',
     accent: JS_ACCENT,
     code: {
       caption: 'script.js',
       language: 'js',
       lines: ['if(key("D")){', '    avancar()', '}'],
     },
+    points: [
+      {
+        label: 'sim',
+        text: 'Tecla apertada: a bola avança.',
+        accent: 'var(--state-success)',
+      },
+      {
+        label: 'não',
+        text: 'Tecla solta: nada acontece.',
+        accent: 'var(--state-error)',
+      },
+    ],
   },
   {
     id: 'js-anatomia-if',
     eyebrow: 'sintaxe · a condição',
-    title: 'Um if, peça por peça.',
-    lead: 'O if é uma pergunta com uma ação: “se isto for verdade, faça aquilo”.',
+    title: 'Um if em três partes.',
     accent: JS_ACCENT,
     anatomy: {
       caption: 'script.js',
@@ -297,168 +307,38 @@ const JS_SEQUENCE: readonly SlideDefinition[] = [
           line: 0,
           text: 'if',
           label: 'se',
-          note: 'if quer dizer “se”. É a palavra que começa uma decisão.',
-        },
-        {
-          line: 0,
-          text: '(',
-          label: 'abre a pergunta',
-          note: 'A pergunta fica entre parênteses, logo depois do if.',
+          note: 'if quer dizer "se": começa uma decisão.',
         },
         {
           line: 0,
           text: 'key("D")',
           label: 'condição',
-          note: 'A pergunta em si: a tecla D está apertada agora? A resposta é sim ou não.',
-        },
-        {
-          line: 0,
-          text: ')',
-          occurrence: 1,
-          label: 'fecha a pergunta',
-          note: 'Este parêntese fecha a pergunta do if. O outro, antes dele, fecha o key("D").',
-        },
-        {
-          line: 0,
-          text: '{',
-          label: 'então',
-          note: 'A chave abre o que acontece quando a resposta for sim.',
+          note: 'A pergunta, entre parênteses: a tecla D está apertada?',
         },
         {
           line: 1,
           text: 'avancar()',
           label: 'ação',
-          note: 'O que o jogo faz se a pergunta der sim: a bola anda para a direita.',
-        },
-        {
-          line: 2,
-          text: '}',
-          label: 'fim do se',
-          note: 'Aqui termina o que depende da pergunta.',
+          note: 'O que acontece se for sim, entre as chaves.',
         },
       ],
     },
-  },
-  {
-    id: 'js-verdadeiro-falso',
-    eyebrow: 'sintaxe · sim ou não',
-    title: 'A condição só tem duas respostas.',
-    lead: 'Toda condição vira verdadeiro ou falso — e é isso que decide se o bloco roda.',
-    accent: JS_ACCENT,
-    points: [
-      {
-        label: 'verdadeiro',
-        text: 'Com a tecla D apertada, o que está entre as chaves acontece: a bola avança.',
-        code: 'key("D") → verdadeiro',
-        language: 'js',
-        accent: 'var(--state-success)',
-      },
-      {
-        label: 'falso',
-        text: 'Com a tecla solta, o bloco é pulado. Nada acontece, e está tudo certo.',
-        code: 'key("D") → falso',
-        language: 'js',
-        accent: 'var(--state-error)',
-      },
-      {
-        label: 'o tempo todo',
-        text: 'O jogo faz essa pergunta dezenas de vezes por segundo, enquanto roda.',
-      },
-    ],
   },
   {
     id: 'js-varios-if',
     eyebrow: 'sintaxe · várias perguntas',
     title: 'Cada tecla, um if.',
-    lead:
-      'Os ifs são independentes: um não espera o outro. Apertando D e espaço juntos, a bola anda e pula ao mesmo tempo.',
+    lead: 'Um não espera o outro: D e espaço juntos, a bola anda e pula.',
     accent: JS_ACCENT,
     code: {
       caption: 'script.js',
       language: 'js',
       lines: [
-        'if(key("D")){',
-        '    avancar()',
-        '}',
-        'if(key("A")){',
-        '    recuar()',
-        '}',
-        'if(key("space")){',
-        '    element("ball").animation("jump")',
-        '}',
+        'if(key("D")){ avancar() }',
+        'if(key("A")){ recuar() }',
+        'if(key("space")){ element("ball").animation("jump") }',
       ],
     },
-  },
-  {
-    id: 'js-anatomia-acao',
-    eyebrow: 'sintaxe · a ação',
-    title: 'Chamar uma ação.',
-    lead: 'Dentro do if vai o que o jogo deve fazer. Uma ação sempre termina com parênteses.',
-    accent: JS_ACCENT,
-    anatomy: {
-      caption: 'script.js',
-      language: 'js',
-      lines: ['avancar()', 'element("ball").animation("jump")'],
-      parts: [
-        {
-          line: 0,
-          text: 'avancar',
-          label: 'nome da ação',
-          note: 'O que fazer. No jogo existem avancar, recuar e element.',
-        },
-        {
-          line: 0,
-          text: '()',
-          label: 'faça agora',
-          note: 'Os parênteses mandam executar. Sem eles, o nome só é lembrado e nada acontece.',
-        },
-        {
-          line: 1,
-          text: 'element("ball")',
-          label: 'pega o elemento',
-          note: 'Busca a bola que você criou no HTML, pelo nome da tag.',
-        },
-        {
-          line: 1,
-          text: '.',
-          label: 'dele',
-          note: 'O ponto quer dizer “desta bola”: a próxima ação é feita nela.',
-        },
-        {
-          line: 1,
-          text: 'animation("jump")',
-          label: 'dispara a animação',
-          note: 'Roda a animação jump que você declarou no CSS. As três linguagens se encontram aqui.',
-        },
-      ],
-    },
-  },
-  {
-    id: 'js-erros',
-    eyebrow: 'sintaxe · cuidado',
-    title: 'Três jeitos de errar no JavaScript.',
-    lead: 'Se a bola não responder à tecla, confira estes primeiro.',
-    accent: JS_ACCENT,
-    points: [
-      {
-        label: 'tecla sem aspas',
-        text: 'O nome da tecla é um texto: vai entre aspas.',
-        code: 'if(key(D)){',
-        language: 'js',
-      },
-      {
-        label: 'ação sem parênteses',
-        text: 'Sem os parênteses, a ação não é executada.',
-        code: 'avancar',
-        language: 'js',
-      },
-      {
-        label: 'chave esquecida',
-        text: 'Toda chave que abre precisa fechar, senão o resto do código entra no if.',
-        code: 'if(key("A")){ recuar()',
-        language: 'js',
-      },
-    ],
   },
 ];
 
