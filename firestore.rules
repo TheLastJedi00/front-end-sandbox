@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// A conta do professor e a mesma em todas as maquinas da sala: cada uma so le
+// e grava a sessao (e os alertas) do proprio usuario. Todo o resto e negado.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /sessoes/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
