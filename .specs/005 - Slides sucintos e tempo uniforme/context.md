@@ -41,7 +41,7 @@ Limites para todo slide, conferidos por teste:
 | `lead` | até **80 caracteres**, uma frase, sem instrução de navegação ("avance para…") |
 | Texto de um ponto | até **60 caracteres** |
 | Nota de uma parte da anatomia | até **60 caracteres** |
-| Código | até **5 linhas** |
+| Código | até **6 linhas** (a animação inteira + a linha que a aplica) |
 
 ## 3. Meta de tempo por slide
 - Uma constante só, `SLIDE_TARGET_MS = 20_000` (**20 segundos por slide**), definida junto dos decks

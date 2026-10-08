@@ -27,7 +27,7 @@ README.md                   # roteiro de 15 minutos refeito
 | Título | até 6 palavras |
 | `lead` | até 80 caracteres, sem "avance…" |
 | Texto de ponto / nota de anatomia | até 60 caracteres |
-| Linhas de código (`code` ou `anatomy`) | até 5 |
+| Linhas de código (`code` ou `anatomy`) | até 6 (ver **Q.5**) |
 | Meta por slide | `SLIDE_TARGET_MS = 20_000` |
 
 Agrupar partes da anatomia não precisa mudar o modelo: cada parte já é um trecho contíguo de uma
@@ -37,27 +37,27 @@ linha, então o trecho só fica maior (ex.: `color:` em vez de `color` + `:`).
 
 ## Fase 0 — A forma como regra
 
-- [ ] **T0.1** — `slides/slide-shape.ts`: constantes da forma e `shapeIssues(deck)` → lista de problemas legíveis ("css-regra: 5 etapas, máximo 3"). Testes da própria função com decks de exemplo (dentro e fora dos limites).
+- [x] **T0.1** — `slides/slide-shape.ts`: constantes da forma e `shapeIssues(deck)` → lista de problemas legíveis ("css-regra: 5 etapas, máximo 3"). Testes da própria função com decks de exemplo (dentro e fora dos limites).
 
 ## Fase 1 — Conteúdo enxuto
 
-- [ ] **T1.1** — **Abertura** em 3 slides: "Você vai escrever um jogo" · "Três linguagens, três papéis" (HTML, CSS, JS) · "Como funciona" (slide, 3 minutos, jogo).
-- [ ] **T1.2** — **HTML** em 3 slides: conceito · anatomia da tag (abertura, conteúdo, fechamento) · dentro de quem (árvore `sky` → `ball`, `ground`).
-- [ ] **T1.3** — **CSS** em 3 slides: conceito com seletor ↔ tag · anatomia da regra (seletor, propriedade, valor) · animação (`@animation jump`, momentos, `animation: jump`).
-- [ ] **T1.4** — **JavaScript** em 3 slides: conceito (reage ao jogador, sim ou não) · anatomia do `if` (`if`, condição, ação) · cada tecla, um `if`.
-- [ ] **T1.5** — `slide-definitions.spec.ts`: todo deck passa em `shapeIssues` sem nenhum problema. Revisar os cards de sintaxe (`assist/syntax-cards.ts`) para nada contradizer os slides novos; o "erro comum" de cada card fica.
+- [x] **T1.1** — **Abertura** em 3 slides: "Você vai escrever um jogo" · "Três linguagens, três papéis" (HTML, CSS, JS) · "Como funciona" (slide, 3 minutos, jogo).
+- [x] **T1.2** — **HTML** em 3 slides: conceito · anatomia da tag (abertura, conteúdo, fechamento) · dentro de quem (árvore `sky` → `ball`, `ground`).
+- [x] **T1.3** — **CSS** em 3 slides: conceito com seletor ↔ tag · anatomia da regra (seletor, propriedade, valor) · animação (`@animation jump`, momentos, `animation: jump`).
+- [x] **T1.4** — **JavaScript** em 3 slides: conceito (reage ao jogador, sim ou não) · anatomia do `if` (`if`, condição, ação) · cada tecla, um `if`.
+- [x] **T1.5** — `slide-definitions.spec.ts`: todo deck passa em `shapeIssues` sem nenhum problema. Revisar os cards de sintaxe (`assist/syntax-cards.ts`) para nada contradizer os slides novos; o "erro comum" de cada card fica.
 
 ## Fase 2 — Ritmo do apresentador
 
-- [ ] **T2.1** — `slides/slide-pace.ts`: `SLIDE_TARGET_MS` e `paceOf(elapsedMs)` → fração da meta e estado (`no-ritmo` · `perto` a partir de 75% · `passou`). Testes.
-- [ ] **T2.2** — `slides/slide-deck`: input `showPace`; com ele, uma barra fina no rodapé enche até a meta de 20s e muda de cor ao passar dela. Zera a cada **troca de slide** (não de etapa). Usa o `Clock` da spec 004. Com `prefers-reduced-motion`, sem transição na barra.
-- [ ] **T2.3** — Abertura e conceito das fases ligam `showPace` só na máquina do apresentador. Nada é gravado no Firestore.
+- [x] **T2.1** — `slides/slide-pace.ts`: `SLIDE_TARGET_MS` e `paceOf(elapsedMs)` → fração da meta e estado (`no-ritmo` · `perto` a partir de 75% · `passou`). Testes.
+- [x] **T2.2** — `slides/slide-deck`: input `showPace`; com ele, uma barra fina no rodapé enche até a meta de 20s e muda de cor ao passar dela. Zera a cada **troca de slide** (não de etapa). Usa o `Clock` da spec 004. Com `prefers-reduced-motion`, sem transição na barra.
+- [x] **T2.3** — Abertura e conceito das fases ligam `showPace` só na máquina do apresentador. Nada é gravado no Firestore.
 
 ## Fase 3 — Qualidade e entrega
 
-- [ ] **T3.1** — Testar no navegador, rodando localmente, com as duas origens (apresentador e aluno): os três decks com 3 slides, etapas, barra de ritmo só no apresentador, sincronização intacta. Cronometrar uma passada da abertura e de um conceito na meta de 20s por slide.
-- [ ] **T3.2** — `README.md`: seção "A apresentação" com os números novos e "Roteiro de 15 minutos" refeito (uma frase por slide + a tabela de tempos do contexto).
-- [ ] **T3.3** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
+- [x] **T3.1** — Testar no navegador, rodando localmente, com as duas origens (apresentador e aluno): os três decks com 3 slides, etapas, barra de ritmo só no apresentador, sincronização intacta. Cronometrar uma passada da abertura e de um conceito na meta de 20s por slide.
+- [x] **T3.2** — `README.md`: seção "A apresentação" com os números novos e "Roteiro de 15 minutos" refeito (uma frase por slide + a tabela de tempos do contexto).
+- [x] **T3.3** — `npm run build` e `npm test` verdes; push da branch e PR contra `main`.
 
 ---
 
@@ -69,3 +69,20 @@ linha, então o trecho só fica maior (ex.: `color:` em vez de `color` + `:`).
 - **Q.2 — A barra de ritmo conta por slide**, zerando a cada troca de slide. ✅
 - **Q.3 — No máximo 3 etapas por slide**, não exatamente 3. ✅
 - **Q.4 — A tela final fica como está**, fora dos decks. ✅
+
+**Decididas durante a execução (recomendação tomada, destacadas no PR):**
+
+- **Q.5 — Código de até 6 linhas, não 5.** O slide da animação mostra o `@animation` inteiro
+  (5 linhas) mais a linha que o aplica; cortar um momento deixaria um exemplo que a fase não
+  aceita.
+- **Q.6 — A régua de ritmo é um componente próprio** (`slides/pace-bar`): dentro do deck, os
+  estilos passavam do orçamento de 4kB por componente.
+- **Q.7 — "Vários if" em uma linha por `if`.** Três linhas em vez de nove; o parser da fase aceita
+  o `if` inteiro numa linha, e um teste novo garante que o código de todo slide passa no parser.
+- **Q.8 — A dica "Avance para desmontar o código" continua** no componente de anatomia, antes da
+  primeira parte: ela é do componente, não do texto do slide, e some no primeiro clique.
+
+**Teste no navegador:** os três conceitos e a abertura foram percorridos clique a clique no
+apresentador (HTML 6 cliques, CSS 9, JS 7, abertura 7), com o aluno acompanhando e a régua só no
+apresentador. A meta de 20s foi conferida na régua (amarela aos 15s), não cronometrada numa aula
+de verdade.
