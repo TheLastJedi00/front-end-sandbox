@@ -1,4 +1,4 @@
-import { effect, inject, Injectable, untracked } from '@angular/core';
+import { effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -63,6 +63,9 @@ export class SessionFollower {
     { initialValue: this.router.url },
   );
 
+  /** A rota do passo para onde o apresentador acabou de voltar. */
+  private readonly backTarget = signal<string | null>(null);
+
   constructor() {
     if (!injectIsBrowser()) return;
 
@@ -88,6 +91,19 @@ export class SessionFollower {
       if (target) void this.router.navigateByUrl(target);
     });
 
+    // Depois de um "Voltar", o apresentador vai para a tela do passo anterior
+    // so quando a sessao ja diz que a aula esta la. Navegar antes faria a fase
+    // de chegada achar que ele entrou sozinho e reabrir o conceito do comeco.
+    effect(() => {
+      const target = this.backTarget();
+      const state = this.session.state();
+      if (!target || !state || routeOf(state).join('/') !== target) return;
+
+      this.backTarget.set(null);
+      const route = followTarget(untracked(this.url), state);
+      if (route) void this.router.navigateByUrl(route);
+    });
+
     // "Reiniciar apresentacao" muda o `startedAt`: e uma turma nova sentando nas
     // mesmas maquinas, entao o codigo e o progresso da turma anterior saem.
     effect(() => {
@@ -95,6 +111,13 @@ export class SessionFollower {
       if (!state || !this.session.exists()) return;
       this.startClass(String(state.startedAt));
     });
+  }
+
+  /** Apresentador: volta um passo da aula e leva a propria tela junto. */
+  back(): void {
+    if (!this.roles.isPresenter()) return;
+    const target = this.session.back();
+    if (target) this.backTarget.set(routeOf(target).join('/'));
   }
 
   private startClass(startedAt: string): void {

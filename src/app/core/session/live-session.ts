@@ -14,6 +14,7 @@ import { injectIsBrowser } from '../platform/browser';
 import { DECK_START } from '../../slides/deck-navigation';
 import { IDLE_TIMER } from './phase-timer';
 import { initialPresentation, parsePresentationState, PresentationState } from './presentation-state';
+import { previousStep } from './previous-step';
 
 export const SESSIONS = 'sessoes';
 
@@ -129,5 +130,19 @@ export class LiveSession {
   /** Reiniciar a apresentacao: todos voltam a abertura e a aula recomeca. */
   restart(): Promise<void> {
     return this.update(initialPresentation(Date.now()));
+  }
+
+  /**
+   * Volta a turma um passo da aula (ver `previousStep`) e devolve o estado de
+   * destino, ou `null` se ja esta no comeco. Quem leva a tela do apresentador
+   * ate la e o `SessionFollower`.
+   */
+  back(): PresentationState | null {
+    const state = this.state();
+    const patch = state && previousStep(state);
+    if (!state || !patch) return null;
+
+    void this.update(patch);
+    return { ...state, ...patch };
   }
 }
