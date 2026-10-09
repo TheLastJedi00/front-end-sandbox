@@ -49,7 +49,7 @@ export const LEVELS: readonly LevelDefinition[] = [
     title: 'O que existe na tela',
     goal: 'Coloque a bola e o terreno dentro do céu.',
     briefing:
-      'O HTML diz quais coisas existem e quem está dentro de quem. Cada elemento se escreve abrindo e fechando: <ball></ball>. Crie a bola e o terreno dentro de <sky> — eles vão aparecer em cinza, porque a cor é assunto da próxima fase.',
+      'O HTML diz quais coisas existem e quem está dentro de quem. Cada elemento se escreve abrindo e fechando: <ball></ball>. Crie a bola e o terreno dentro de <sky> — eles vão aparecer brancos com borda preta, porque a cor é assunto da próxima fase.',
     enabledFiles: ['html'],
     focusFile: 'html',
     starter: {

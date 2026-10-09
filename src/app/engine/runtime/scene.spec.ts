@@ -27,11 +27,11 @@ describe('buildScene', () => {
     expect(result.ball.visible).toBeFalse();
   });
 
-  it('usa cinza quando nenhuma cor foi declarada', () => {
+  it('usa branco quando nenhuma cor foi declarada', () => {
     const result = scene('<sky><ball></ball></sky>', '');
 
     expect(result.ball.colorName).toBeNull();
-    expect(result.ball.color).toBe('var(--border-strong)');
+    expect(result.ball.color).toBe('#ffffff');
   });
 
   it('mantem cor desconhecida como o aluno escreveu', () => {

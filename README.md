@@ -39,8 +39,9 @@ Uma fase, uma ferramenta:
 | 2 | CSS | Pinta os três elementos, declara `@animation jump` e aplica na bola |
 | 3 | JavaScript | Liga `A`, `D` e `espaço` ao jogo e chega à bandeira |
 
-Na fase 1 os elementos aparecem em cinza — a cor é assunto da fase 2, e ver o cinza virar
-azul, vermelho e verde é justamente o que mostra para que serve o CSS.
+Na fase 1 cada elemento aparece branco com borda preta — dá para ver que são três caixas
+diferentes antes de qualquer estilo. A cor é assunto da fase 2, e ver o branco virar azul,
+vermelho e verde é justamente o que mostra para que serve o CSS.
 
 A linguagem é simplificada de propósito (`@animation` com `inicio/meio/fim`, `position` de `0` a
 `1`, `avancar()`, `recuar()`, `element("ball").animation("jump")`), mas a forma é a real:
