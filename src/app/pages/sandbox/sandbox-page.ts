@@ -42,6 +42,8 @@ import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { LiveSession } from '../../core/session/live-session';
 import { RoleStore } from '../../core/session/role-store';
 import { SolutionAlerts } from '../../core/session/solution-alerts';
+import { ClassProgressService } from '../../core/session/class-progress';
+import { ClassProgressPopup } from '../../core/session/class-progress-popup/class-progress-popup';
 import { Clock } from '../../core/platform/clock';
 import {
   IDLE_TIMER,
@@ -74,6 +76,7 @@ import { LevelProgress } from './level-progress';
     SyntaxCards,
     SessionBadge,
     PhaseTimer,
+    ClassProgressPopup,
   ],
   providers: [GameLoop],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -161,11 +164,7 @@ import { LevelProgress } from './level-progress';
           @if (validation().completed) {
             <div class="done" role="status">
               <strong>Fase concluída!</strong>
-              @if (roles.isPresenter()) {
-                <button type="button" class="next" (click)="goToNext()">
-                  {{ isLast() ? 'Ver o resultado' : 'Próxima fase' }}
-                </button>
-              } @else {
+              @if (roles.isStudent()) {
                 <span class="wait">O professor leva a turma para a próxima etapa.</span>
               }
             </div>
@@ -177,6 +176,15 @@ import { LevelProgress } from './level-progress';
         {{ diagnostics().length }} problema(s)
       </app-status-bar>
     </app-ide-shell>
+
+    <!-- O seguir do apresentador mora aqui: nao depende de ele concluir a fase. -->
+    @if (classProgress(); as progress) {
+      <app-class-progress-popup
+        [progress]="progress"
+        [nextLabel]="isLast() ? 'Ver o resultado' : 'Próxima fase'"
+        (next)="goToNext()"
+      />
+    }
   `,
   styles: `
     .editor-area {
@@ -252,14 +260,6 @@ import { LevelProgress } from './level-progress';
       font-size: 0.875rem;
     }
 
-    .next {
-      padding: var(--space-2) var(--space-4);
-      border: none;
-      border-radius: var(--radius-sm);
-      background: var(--surface-status);
-      color: var(--text-inverse);
-      font-weight: 600;
-    }
 
     kbd {
       padding: 0.05rem 0.35rem;
@@ -280,6 +280,7 @@ export class SandboxPage implements OnInit {
   private readonly briefings = inject(BriefingStore);
   private readonly session = inject(LiveSession);
   private readonly alerts = inject(SolutionAlerts);
+  private readonly turma = inject(ClassProgressService);
   protected readonly roles = inject(RoleStore);
 
   /**
@@ -317,6 +318,15 @@ export class SandboxPage implements OnInit {
   private readonly clock = inject(Clock);
   /** Os 3 minutos acabaram. So avisa: o editor continua livre. */
   protected readonly timeUp = computed(() => isExpired(this.timer(), this.clock.now()));
+  /**
+   * Progresso da turma no popup do apresentador: so durante o codigo desta
+   * fase, e ja desde "0 de N" — confirma que as maquinas entraram.
+   */
+  protected readonly classProgress = computed(() =>
+    this.roles.isPresenter() && this.liveLevel() && !this.showConcept()
+      ? this.turma.current()
+      : null,
+  );
   /** Slide e etapa do conceito em que a turma esta. */
   protected readonly conceptDeck = computed(() => this.liveLevel()?.deck ?? null);
 
@@ -431,6 +441,13 @@ export class SandboxPage implements OnInit {
     // A fase concluida fica marcada na trilha, mesmo se o aluno voltar atras.
     effect(() => {
       if (this.validation().completed) this.progress.markCompleted(this.level().id);
+    });
+
+    // E avisa o professor: a maquina do aluno entra na contagem da turma. O
+    // servico le a sessao, entao isto roda de novo quando ela chega — e grava
+    // uma vez so por fase.
+    effect(() => {
+      if (this.validation().completed) void this.turma.reportCompletion(this.level().id);
     });
 
     // Trocar de fase ou mexer no codigo recomeca o jogo do zero: o que ja foi
