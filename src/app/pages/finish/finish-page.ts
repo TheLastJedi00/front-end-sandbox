@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { LiveSession } from '../../core/session/live-session';
+import { RouterLink } from '@angular/router';
+import { RestartDialog } from '../../core/session/restart-dialog/restart-dialog';
 import { RoleStore } from '../../core/session/role-store';
 import { ProgressStore } from '../../core/services/progress-store';
 import { SessionBadge } from '../../core/session/session-badge/session-badge';
@@ -9,7 +9,7 @@ import { FIRST_LEVEL, LEVELS } from '../../levels/level-definitions';
 /** Fechamento: amarra os tres conceitos ao que o aluno acabou de construir. */
 @Component({
   selector: 'app-finish-page',
-  imports: [RouterLink, SessionBadge],
+  imports: [RouterLink, SessionBadge, RestartDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-session-badge class="badge" />
@@ -37,11 +37,12 @@ import { FIRST_LEVEL, LEVELS } from '../../levels/level-definitions';
           <a class="action action--primary" [routerLink]="['/sandbox', firstLevel]">
             Jogar de novo
           </a>
-          <button class="action" type="button" (click)="restart()">
+          <button class="action" type="button" (click)="restart.open()">
             Reiniciar apresentação
           </button>
         </div>
         <p class="note">Reiniciar volta todas as máquinas à abertura e apaga o código da turma.</p>
+        <app-restart-dialog #restart />
       }
     </main>
   `,
@@ -163,14 +164,6 @@ export class FinishPage {
   protected readonly total = LEVELS.length;
   protected readonly firstLevel = FIRST_LEVEL;
   protected readonly roles = inject(RoleStore);
-
-  private readonly session = inject(LiveSession);
-  private readonly router = inject(Router);
-
-  protected async restart(): Promise<void> {
-    void this.session.restart();
-    await this.router.navigate(['/']);
-  }
 
   protected readonly recap = [
     {
