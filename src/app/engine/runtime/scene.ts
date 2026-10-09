@@ -25,7 +25,7 @@ export interface SceneElement {
   readonly visible: boolean;
   /** Nome da cor escrita pelo aluno, ou null se nao houver. */
   readonly colorName: string | null;
-  /** Cor pronta para desenhar; cinza quando nada foi declarado. */
+  /** Cor pronta para desenhar; branco quando nada foi declarado. */
   readonly color: string;
 }
 
@@ -41,7 +41,12 @@ export interface Scene {
   readonly animation: CssAnimation | null;
 }
 
-const NO_COLOR = 'var(--border-strong)';
+/**
+ * Sem CSS, cada elemento aparece branco com borda preta (o contorno fica a
+ * cargo do preview). Se os tres tivessem a mesma cor cheia, quem ve pela
+ * primeira vez nao enxergaria que sao tres caixas diferentes.
+ */
+const NO_COLOR = '#ffffff';
 
 function resolveColor(name: string | null): string {
   if (!name) return NO_COLOR;

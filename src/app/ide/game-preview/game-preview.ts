@@ -27,10 +27,11 @@ import { describeScene, Scene } from '../../engine/runtime/scene';
     <p class="sr-only" role="status">{{ description() }}</p>
     <div class="stage" [class.stage--done]="completed()">
       @if (model().skyColor !== 'transparent') {
-        <sky [style.background]="model().skyColor">
+        <sky [style.background]="model().skyColor" [class.unstyled]="model().skyOutlined">
           @if (model().ground.visible) {
             <ground
               [style.background]="model().ground.color"
+              [class.unstyled]="model().ground.outlined"
               [style.height.%]="model().ground.height"
             ></ground>
           }
@@ -48,6 +49,7 @@ import { describeScene, Scene } from '../../engine/runtime/scene';
           @if (model().ball.visible) {
             <ball
               [style.background]="model().ball.color"
+              [class.unstyled]="model().ball.outlined"
               [style.left.%]="model().ball.left"
               [style.bottom.%]="model().ball.bottom"
               [style.height.%]="model().ball.size"
@@ -116,6 +118,11 @@ import { describeScene, Scene } from '../../engine/runtime/scene';
       border-radius: 50%;
       transform: translateX(-50%);
       box-shadow: inset -0.2rem -0.2rem 0 rgba(0, 0, 0, 0.18);
+    }
+
+    /* Antes do CSS do aluno: branco com borda preta, como caixa ainda sem estilo. */
+    .unstyled {
+      border: 1px solid #000;
     }
 
     .goal {
