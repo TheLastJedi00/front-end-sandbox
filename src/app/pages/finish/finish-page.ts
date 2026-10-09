@@ -4,6 +4,7 @@ import { RestartDialog } from '../../core/session/restart-dialog/restart-dialog'
 import { RoleStore } from '../../core/session/role-store';
 import { ProgressStore } from '../../core/services/progress-store';
 import { SessionBadge } from '../../core/session/session-badge/session-badge';
+import { SessionFollower } from '../../core/session/session-follower';
 import { FIRST_LEVEL, LEVELS } from '../../levels/level-definitions';
 
 /** Fechamento: amarra os tres conceitos ao que o aluno acabou de construir. */
@@ -34,6 +35,9 @@ import { FIRST_LEVEL, LEVELS } from '../../levels/level-definitions';
       <!-- So o apresentador conduz: o que ele escolhe aqui vale para a turma. -->
       @if (roles.isPresenter()) {
         <div class="actions">
+          <button class="action" type="button" (click)="follower.back()">
+            <span aria-hidden="true">←</span> Voltar ao código
+          </button>
           <a class="action action--primary" [routerLink]="['/sandbox', firstLevel]">
             Jogar de novo
           </a>
@@ -164,6 +168,8 @@ export class FinishPage {
   protected readonly total = LEVELS.length;
   protected readonly firstLevel = FIRST_LEVEL;
   protected readonly roles = inject(RoleStore);
+  /** "Voltar" leva a turma de volta ao codigo da ultima fase. */
+  protected readonly follower = inject(SessionFollower);
 
   protected readonly recap = [
     {
