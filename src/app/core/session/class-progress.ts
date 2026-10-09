@@ -1,9 +1,15 @@
-import { computed, effect, inject, Injectable } from '@angular/core';
-import { doc, setDoc } from 'firebase/firestore';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
 import { AuthStore } from '../auth/auth-store';
 import { firebase } from '../firebase/firebase';
 import { injectIsBrowser } from '../platform/browser';
-import { completionId, LevelCompletion, MachinePresence } from './class-progress-state';
+import {
+  classProgress,
+  ClassProgress,
+  completionId,
+  LevelCompletion,
+  MachinePresence,
+} from './class-progress-state';
 import { LiveSession, SESSIONS } from './live-session';
 import { machineId } from './machine-id';
 import { RoleStore } from './role-store';
@@ -30,8 +36,49 @@ export class ClassProgressService {
   /** Fases ja avisadas nesta aula: cada uma vira uma gravacao so. */
   private reported = new Set<string>();
 
+  private readonly machines = signal<readonly MachinePresence[]>([]);
+  private readonly completions = signal<readonly LevelCompletion[]>([]);
+
+  /** Apresentador: a turma na fase em que a aula esta agora. */
+  readonly current = computed<ClassProgress | null>(() => {
+    const state = this.session.state();
+    const startedAt = this.startedAt();
+    if (!state || state.stage !== 'fase' || startedAt === null) return null;
+    return classProgress(this.machines(), this.completions(), state.levelId, startedAt);
+  });
+
   constructor() {
     if (!this.isBrowser) return;
+
+    // So o apresentador escuta, e so o desta aula: reiniciar troca a escuta e a
+    // contagem volta a zero sem apagar nada no Firestore.
+    effect((onCleanup) => {
+      const uid = this.auth.uid();
+      const startedAt = this.startedAt();
+      this.machines.set([]);
+      this.completions.set([]);
+      if (!uid || startedAt === null || !this.roles.isPresenter()) return;
+
+      const db = firebase().db;
+      const since = (name: string) =>
+        query(collection(db, SESSIONS, uid, name), where('at', '>=', startedAt));
+
+      const stopMachines = onSnapshot(since(MACHINES), (snapshot) =>
+        this.machines.set(
+          snapshot.docs.flatMap((d) => {
+            const at = d.get('at');
+            return typeof at === 'number' ? [{ machine: d.id, at }] : [];
+          }),
+        ),
+      );
+      const stopCompletions = onSnapshot(since(COMPLETIONS), (snapshot) =>
+        this.completions.set(snapshot.docs.flatMap((d) => parseCompletion(d.data()))),
+      );
+      onCleanup(() => {
+        stopMachines();
+        stopCompletions();
+      });
+    });
 
     // O aluno entra na conta da aula: de novo a cada "Reiniciar apresentacao".
     effect(() => {
@@ -69,4 +116,12 @@ export class ClassProgressService {
   private stamp(startedAt: number): number {
     return Math.max(Date.now(), startedAt);
   }
+}
+
+function parseCompletion(data: unknown): LevelCompletion[] {
+  if (typeof data !== 'object' || data === null) return [];
+  const { levelId, machine, at } = data as Record<string, unknown>;
+  return typeof levelId === 'number' && typeof machine === 'string' && typeof at === 'number'
+    ? [{ levelId, machine, at }]
+    : [];
 }
