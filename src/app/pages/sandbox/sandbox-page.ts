@@ -40,8 +40,11 @@ import { SyntaxCards } from '../../ide/syntax-cards/syntax-cards';
 import { ConceptOverlay } from '../../slides/concept-overlay/concept-overlay';
 import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { LiveSession } from '../../core/session/live-session';
+import { SessionFollower } from '../../core/session/session-follower';
 import { RoleStore } from '../../core/session/role-store';
 import { SolutionAlerts } from '../../core/session/solution-alerts';
+import { ClassProgressService } from '../../core/session/class-progress';
+import { ClassProgressPopup } from '../../core/session/class-progress-popup/class-progress-popup';
 import { Clock } from '../../core/platform/clock';
 import {
   IDLE_TIMER,
@@ -74,6 +77,7 @@ import { LevelProgress } from './level-progress';
     SyntaxCards,
     SessionBadge,
     PhaseTimer,
+    ClassProgressPopup,
   ],
   providers: [GameLoop],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -83,13 +87,21 @@ import { LevelProgress } from './level-progress';
         [concept]="level().concept"
         [synced]="conceptDeck()"
         [followOnly]="roles.isStudent()"
+        [canGoBack]="roles.isPresenter() && liveLevel() !== null"
         (moved)="onConceptMoved($event)"
         (dismiss)="startLevel()"
+        (back)="follower.back()"
       />
     }
 
     <app-ide-shell>
       <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'">
+        @if (roles.isPresenter() && liveLevel() && !showConcept()) {
+          <!-- Sai do codigo e reabre o conceito desta fase, para a turma toda. -->
+          <button class="back" type="button" (click)="follower.back()">
+            <span aria-hidden="true">←</span> Voltar
+          </button>
+        }
         <app-level-progress [current]="level().id" [navigable]="roles.isPresenter()" />
         <app-phase-timer
           [timer]="timer()"
@@ -161,11 +173,7 @@ import { LevelProgress } from './level-progress';
           @if (validation().completed) {
             <div class="done" role="status">
               <strong>Fase concluída!</strong>
-              @if (roles.isPresenter()) {
-                <button type="button" class="next" (click)="goToNext()">
-                  {{ isLast() ? 'Ver o resultado' : 'Próxima fase' }}
-                </button>
-              } @else {
+              @if (roles.isStudent()) {
                 <span class="wait">O professor leva a turma para a próxima etapa.</span>
               }
             </div>
@@ -177,6 +185,15 @@ import { LevelProgress } from './level-progress';
         {{ diagnostics().length }} problema(s)
       </app-status-bar>
     </app-ide-shell>
+
+    <!-- O seguir do apresentador mora aqui: nao depende de ele concluir a fase. -->
+    @if (classProgress(); as progress) {
+      <app-class-progress-popup
+        [progress]="progress"
+        [nextLabel]="isLast() ? 'Ver o resultado' : 'Próxima fase'"
+        (next)="goToNext()"
+      />
+    }
   `,
   styles: `
     .editor-area {
@@ -195,6 +212,20 @@ import { LevelProgress } from './level-progress';
       flex-wrap: wrap;
       gap: var(--space-2);
       padding: 0 var(--space-4) var(--space-3);
+    }
+
+    .back {
+      padding: 0.1rem var(--space-2);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .back:hover {
+      border-color: var(--focus-ring);
+      color: var(--text-primary);
     }
 
     .tool {
@@ -252,14 +283,6 @@ import { LevelProgress } from './level-progress';
       font-size: 0.875rem;
     }
 
-    .next {
-      padding: var(--space-2) var(--space-4);
-      border: none;
-      border-radius: var(--radius-sm);
-      background: var(--surface-status);
-      color: var(--text-inverse);
-      font-weight: 600;
-    }
 
     kbd {
       padding: 0.05rem 0.35rem;
@@ -279,7 +302,9 @@ export class SandboxPage implements OnInit {
   private readonly storage = inject(CodeStorage);
   private readonly briefings = inject(BriefingStore);
   private readonly session = inject(LiveSession);
+  protected readonly follower = inject(SessionFollower);
   private readonly alerts = inject(SolutionAlerts);
+  private readonly turma = inject(ClassProgressService);
   protected readonly roles = inject(RoleStore);
 
   /**
@@ -300,7 +325,7 @@ export class SandboxPage implements OnInit {
   protected readonly activeFile = linkedSignal<SourceFileId>(() => this.level().focusFile);
 
   /** A sessao ao vivo, quando ela fala desta fase. */
-  private readonly liveLevel = computed(() => {
+  protected readonly liveLevel = computed(() => {
     const state = this.session.state();
     return state?.stage === 'fase' && state.levelId === this.level().id ? state : null;
   });
@@ -317,6 +342,15 @@ export class SandboxPage implements OnInit {
   private readonly clock = inject(Clock);
   /** Os 3 minutos acabaram. So avisa: o editor continua livre. */
   protected readonly timeUp = computed(() => isExpired(this.timer(), this.clock.now()));
+  /**
+   * Progresso da turma no popup do apresentador: so durante o codigo desta
+   * fase, e ja desde "0 de N" — confirma que as maquinas entraram.
+   */
+  protected readonly classProgress = computed(() =>
+    this.roles.isPresenter() && this.liveLevel() && !this.showConcept()
+      ? this.turma.current()
+      : null,
+  );
   /** Slide e etapa do conceito em que a turma esta. */
   protected readonly conceptDeck = computed(() => this.liveLevel()?.deck ?? null);
 
@@ -431,6 +465,13 @@ export class SandboxPage implements OnInit {
     // A fase concluida fica marcada na trilha, mesmo se o aluno voltar atras.
     effect(() => {
       if (this.validation().completed) this.progress.markCompleted(this.level().id);
+    });
+
+    // E avisa o professor: a maquina do aluno entra na contagem da turma. O
+    // servico le a sessao, entao isto roda de novo quando ela chega — e grava
+    // uma vez so por fase.
+    effect(() => {
+      if (this.validation().completed) void this.turma.reportCompletion(this.level().id);
     });
 
     // Trocar de fase ou mexer no codigo recomeca o jogo do zero: o que ja foi

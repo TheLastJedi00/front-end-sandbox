@@ -72,7 +72,12 @@ const SWIPE_MIN = 48;
         <app-pace-bar [slide]="index()" />
       }
       @if (!followOnly()) {
-        <button class="nav" type="button" [disabled]="isFirst()" (click)="previous()">
+        <button
+          class="nav"
+          type="button"
+          [disabled]="isFirst() && !canGoBack()"
+          (click)="previous()"
+        >
           <span aria-hidden="true">←</span> Voltar
         </button>
       }
@@ -372,11 +377,15 @@ export class SlideDeck {
   readonly followOnly = input(false);
   /** Mostra a regua de ritmo (tempo no slide contra a meta). */
   readonly showPace = input(false);
+  /** Ha um passo da aula antes deste deck: o "Voltar" do comeco leva ate ele. */
+  readonly canGoBack = input(false);
 
   /** O deck acabou — por ter chegado ao fim ou por ter sido pulado. */
   readonly finish = output<void>();
   /** Cada movimento feito aqui, para o apresentador gravar na sessao. */
   readonly moved = output<DeckPosition>();
+  /** "Voltar" no comeco do deck, com `canGoBack`: sair para o passo anterior. */
+  readonly back = output<void>();
 
   /**
    * Quem pediu menos movimento ao sistema ve cada slide ja completo: revelar
@@ -450,7 +459,15 @@ export class SlideDeck {
 
   previous(): void {
     const step = this.reducedMotion ? retreatWhole : retreat;
-    this.moveTo(step(this.slides(), this.position()));
+    const position = this.position();
+    const target = step(this.slides(), position);
+    // Do comeco do deck nao ha para onde voltar aqui dentro: o passo anterior
+    // e de fora (o codigo da fase anterior, ou a abertura).
+    if (target.slide === position.slide && target.step === position.step) {
+      if (this.canGoBack() && !this.followOnly()) this.back.emit();
+      return;
+    }
+    this.moveTo(target);
   }
 
   go(index: number): void {

@@ -1,19 +1,28 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthStore } from '../../auth/auth-store';
+import { RestartDialog } from '../restart-dialog/restart-dialog';
 import { RoleStore } from '../role-store';
 
 /**
  * Lembra quem esta maquina e na aula e deixa sair dela. Sair tambem esquece o
- * papel: e o caminho para uma maquina trocar de apresentador para aluno.
+ * papel: e o caminho para uma maquina trocar de apresentador para aluno. Para
+ * o apresentador, e tambem onde fica o "Reiniciar apresentacao", em qualquer tela.
  */
 @Component({
   selector: 'app-session-badge',
+  imports: [RestartDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'session-badge' },
   template: `
     <span class="role" [class.role--presenter]="roles.isPresenter()">{{ label() }}</span>
-    <button class="logout" type="button" (click)="logout()">Sair</button>
+    @if (roles.isPresenter()) {
+      <button class="action" type="button" (click)="restart.open()">
+        Reiniciar apresentação
+      </button>
+      <app-restart-dialog #restart />
+    }
+    <button class="action" type="button" (click)="logout()">Sair</button>
   `,
   styles: `
     :host {
@@ -36,7 +45,7 @@ import { RoleStore } from '../role-store';
       color: var(--state-warning);
     }
 
-    .logout {
+    .action {
       padding: 0.1rem var(--space-2);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius-sm);
@@ -45,7 +54,7 @@ import { RoleStore } from '../role-store';
       font-size: inherit;
     }
 
-    .logout:hover {
+    .action:hover {
       border-color: var(--focus-ring);
       color: var(--text-primary);
     }

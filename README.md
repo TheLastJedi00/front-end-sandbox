@@ -27,7 +27,8 @@ pulados e o resto roda normalmente. A sessão que existia antes dos testes é de
 
 Para testar apresentador e aluno no mesmo computador, abra `http://localhost:4200` numa aba e
 `http://aluno.localhost:4200` em outra: são origens diferentes, cada uma com o seu login e o seu
-papel.
+papel. Para ver o progresso da turma com mais de um aluno, abra também
+`http://aluno2.localhost:4200`.
 
 ## As três fases
 
@@ -111,8 +112,9 @@ O que o apresentador faz, todas as máquinas veem na hora:
 | Avança ou volta um slide (ou uma etapa) na abertura | Mesmo slide, mesma etapa |
 | Termina a abertura ou pula para o jogo | Vão para a fase 1, com o conceito aberto |
 | Avança no conceito da fase e fecha para começar | Mesmo slide; a IDE abre quando ele fecha |
-| "Próxima fase" / "Ver o resultado" | Vão para a próxima fase / para o fim |
-| "Reiniciar apresentação" no fim | Voltam à abertura, com o código da turma anterior apagado |
+| "Próxima fase" / "Ver o resultado" (no popup de progresso) | Vão para a próxima fase / para o fim |
+| "← Voltar" | Voltam um passo da aula, inclusive saindo do código (ver abaixo) |
+| "Reiniciar apresentação" (em qualquer tela, com confirmação) | Voltam à abertura, com o código da turma anterior apagado |
 
 Quem entra no meio da aula (ou dá F5) cai direto onde a turma está. O apresentador que dá F5 na
 abertura também volta para onde a turma estava.
@@ -121,6 +123,39 @@ O **código de cada aluno é local**: não vai para o Firestore. Dicas, cards de
 "Reiniciar fase" também são de cada máquina. **Mostrar solução** continua livre para o aluno,
 mas avisa o professor: aparece um popup na tela do apresentador ("Uma máquina mostrou a solução
 da fase 1" — vários avisos seguidos da mesma fase viram um só, contando as máquinas).
+
+### Progresso da turma
+
+Durante o código de cada fase, a tela do apresentador mostra um popup no canto: **"7 de 12 alunos
+terminaram"**, com uma barra que enche a cada aluno que conclui a missão. Quando todos terminam, a
+barra fica cheia e **brilha**, e o botão **Próxima fase** (ou **Ver o resultado**, na fase 3) se
+destaca. O botão funciona a qualquer momento: o brilho só avisa, quem decide seguir é o professor.
+O popup pode ser recolhido numa pílula ("7/12") para não cobrir o palco. Com
+`prefers-reduced-motion`, nada pulsa: a barra só muda de cor e ganha um contorno.
+
+- **"Alunos"** são as máquinas que entraram como aluno nesta aula. Uma máquina que fechou a aba
+  continua contando, então a barra pode não chegar a 100%: o botão de seguir não depende dela.
+- **Concluir conta uma vez por fase.** Quem concluiu e depois quebrou o código continua contado, e
+  "Mostrar solução" também conta como concluída (o professor já recebe o aviso de solução).
+- **"Reiniciar apresentação" zera a contagem** sem apagar nada: só vale o que veio depois do
+  `startedAt` da aula.
+
+### Voltar uma etapa
+
+A aula é uma sequência só: abertura → conceito da fase 1 → código da fase 1 → conceito da fase 2
+→ … → código da fase 3 → fim. O **← Voltar** do apresentador sempre leva ao passo anterior dela,
+e a turma vai junto:
+
+| Onde o apresentador está | "← Voltar" leva para |
+| --- | --- |
+| Um slide que não é o primeiro | a etapa ou o slide anterior |
+| Primeiro slide do conceito da fase N | o código da fase N−1 (ou o último slide da abertura, na fase 1) |
+| Código da fase N (botão na barra de título) | o último slide do conceito da fase N |
+| Tela final ("← Voltar ao código") | o código da fase 3 |
+
+O código dos alunos não se perde ao voltar: ele é local e fica salvo por fase. Ao voltar para um
+código, o timer daquela fase fica **parado**; ele recomeça com 3 minutos quando o apresentador
+fechar o conceito de novo.
 
 ### Timer de 3 minutos
 
@@ -138,7 +173,16 @@ certos (poucos segundos de diferença não atrapalham).
 Tudo vive num documento só, `sessoes/{uid}`. Como todas as máquinas usam a conta do professor,
 todas leem o mesmo documento — não há código de sala. Os alunos escutam o documento com
 `onSnapshot`, o canal em tempo real do Firestore (conexão aberta, sem polling e sem servidor
-próprio); só o apresentador grava. Os avisos de solução vão para `sessoes/{uid}/alertas`.
+próprio); só o apresentador grava. Três subcoleções levam o que vai do aluno para o professor:
+
+| Subcoleção | O que guarda |
+| --- | --- |
+| `alertas` | uma máquina mostrou a solução de uma fase |
+| `maquinas/{maquina}` | a máquina entrou como aluno nesta aula (`at`) |
+| `conclusoes/{maquina}-{fase}` | a máquina concluiu a missão da fase (`levelId`, `machine`, `at`) |
+
+A máquina é um id aleatório guardado no navegador, não o nome do aluno. Só o apresentador escuta
+essas subcoleções; numa aula de 30 alunos elas somam umas 120 gravações.
 
 | Campo | O que guarda |
 | --- | --- |
@@ -192,9 +236,10 @@ Uma frase por slide basta — a régua no rodapé diz quando passar:
 | | Um `if` em três partes | Se, condição, ação. |
 | | Cada tecla, um `if` | "D anda, A volta, espaço pula — ao mesmo tempo." |
 
-Na programação: leia o objetivo nos primeiros segundos e avance quando aparecer **Tempo
-esgotado** — quem não terminou pode usar "Mostrar solução" (o aviso aparece na sua tela), e a
-fase seguinte já começa com o código pronto.
+Na programação: leia o objetivo nos primeiros segundos e avance quando o popup de progresso
+**brilhar** (a turma toda terminou) ou quando aparecer **Tempo esgotado** — quem não terminou pode
+usar "Mostrar solução" (o aviso aparece na sua tela), e a fase seguinte já começa com o código
+pronto. Se a turma precisar rever a sintaxe, o **← Voltar** reabre o conceito da fase.
 
 ## A assistência dentro da IDE
 
@@ -236,7 +281,8 @@ src/app/
     firebase/        config e init do Firebase, só no navegador
     auth/            AuthStore (login) e guards das rotas
     session/         a aula ao vivo: papel da máquina, estado da sessão, timer,
-                     LiveSession (Firestore), SessionFollower e alertas de solução
+                     LiveSession (Firestore), SessionFollower, alertas de solução,
+                     progresso da turma (popup), previous-step e o diálogo de reinício
   assist/            TypeScript puro: vocabulary, completion, ghost-suggestion,
                      syntax-cards — a assistência da IDE, testável sem DOM
   slides/            deck de apresentação: slide, slide-deck, concept-overlay,
@@ -270,7 +316,7 @@ Três decisões que explicam o resto do código:
   passos da fase, não um modelo. Zero chave de API e nenhuma resposta imprevisível na frente da
   turma — a única rede do app é a sessão ao vivo.
 - **A sessão ao vivo é lógica pura por baixo** (`core/session/presentation-state.ts`,
-  `phase-timer.ts`, `session-follower.ts`): ler o documento, calcular o timer e decidir a rota
+  `phase-timer.ts`, `session-follower.ts`, `previous-step.ts`, `class-progress-state.ts`): ler o documento, calcular o timer e decidir a rota
   são funções testáveis sem Firebase; o Firestore só leva e traz o estado.
 
 ## Mexer nas fases

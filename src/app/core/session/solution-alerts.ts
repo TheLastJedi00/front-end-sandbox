@@ -4,10 +4,10 @@ import { AuthStore } from '../auth/auth-store';
 import { firebase } from '../firebase/firebase';
 import { injectIsBrowser } from '../platform/browser';
 import { SESSIONS } from './live-session';
+import { machineId } from './machine-id';
 import { RoleStore } from './role-store';
 
 const ALERTS = 'alertas';
-const MACHINE_KEY = 'sandbox-front-end:v1:maquina';
 
 /** Alertas da mesma fase que chegam dentro desta janela viram um popup so. */
 export const MERGE_WINDOW_MS = 10_000;
@@ -116,7 +116,7 @@ export class SolutionAlerts {
     const uid = this.auth.uid();
     if (!this.isBrowser || !uid) return Promise.resolve();
 
-    const alert: SolutionAlert = { levelId, machine: this.machineId(), at: Date.now() };
+    const alert: SolutionAlert = { levelId, machine: machineId(), at: Date.now() };
     return addDoc(collection(firebase().db, SESSIONS, uid, ALERTS), alert);
   }
 
@@ -139,17 +139,5 @@ export class SolutionAlerts {
       toast.id,
       setTimeout(() => this.dismiss(toast.id), TOAST_LIFETIME_MS),
     );
-  }
-
-  private machineId(): string {
-    try {
-      const saved = localStorage.getItem(MACHINE_KEY);
-      if (saved) return saved;
-      const id = crypto.randomUUID();
-      localStorage.setItem(MACHINE_KEY, id);
-      return id;
-    } catch {
-      return 'desconhecida';
-    }
   }
 }
