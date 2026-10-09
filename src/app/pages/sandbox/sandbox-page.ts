@@ -40,6 +40,7 @@ import { SyntaxCards } from '../../ide/syntax-cards/syntax-cards';
 import { ConceptOverlay } from '../../slides/concept-overlay/concept-overlay';
 import { SessionBadge } from '../../core/session/session-badge/session-badge';
 import { LiveSession } from '../../core/session/live-session';
+import { SessionFollower } from '../../core/session/session-follower';
 import { RoleStore } from '../../core/session/role-store';
 import { SolutionAlerts } from '../../core/session/solution-alerts';
 import { ClassProgressService } from '../../core/session/class-progress';
@@ -86,13 +87,21 @@ import { LevelProgress } from './level-progress';
         [concept]="level().concept"
         [synced]="conceptDeck()"
         [followOnly]="roles.isStudent()"
+        [canGoBack]="roles.isPresenter() && liveLevel() !== null"
         (moved)="onConceptMoved($event)"
         (dismiss)="startLevel()"
+        (back)="follower.back()"
       />
     }
 
     <app-ide-shell>
       <app-title-bar ideTitleBar [label]="level().title + ' — sandbox-front-end'">
+        @if (roles.isPresenter() && liveLevel() && !showConcept()) {
+          <!-- Sai do codigo e reabre o conceito desta fase, para a turma toda. -->
+          <button class="back" type="button" (click)="follower.back()">
+            <span aria-hidden="true">←</span> Voltar
+          </button>
+        }
         <app-level-progress [current]="level().id" [navigable]="roles.isPresenter()" />
         <app-phase-timer
           [timer]="timer()"
@@ -205,6 +214,20 @@ import { LevelProgress } from './level-progress';
       padding: 0 var(--space-4) var(--space-3);
     }
 
+    .back {
+      padding: 0.1rem var(--space-2);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .back:hover {
+      border-color: var(--focus-ring);
+      color: var(--text-primary);
+    }
+
     .tool {
       padding: var(--space-2) var(--space-3);
       border: 1px solid var(--border-strong);
@@ -279,6 +302,7 @@ export class SandboxPage implements OnInit {
   private readonly storage = inject(CodeStorage);
   private readonly briefings = inject(BriefingStore);
   private readonly session = inject(LiveSession);
+  protected readonly follower = inject(SessionFollower);
   private readonly alerts = inject(SolutionAlerts);
   private readonly turma = inject(ClassProgressService);
   protected readonly roles = inject(RoleStore);
@@ -301,7 +325,7 @@ export class SandboxPage implements OnInit {
   protected readonly activeFile = linkedSignal<SourceFileId>(() => this.level().focusFile);
 
   /** A sessao ao vivo, quando ela fala desta fase. */
-  private readonly liveLevel = computed(() => {
+  protected readonly liveLevel = computed(() => {
     const state = this.session.state();
     return state?.stage === 'fase' && state.levelId === this.level().id ? state : null;
   });
