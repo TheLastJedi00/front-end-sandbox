@@ -79,7 +79,8 @@
           "defaultConfiguration": "development",
           "options": {
             "allowedHosts": [
-              "aluno.localhost"
+              "aluno.localhost",
+              "aluno2.localhost"
             ]
           }
         },
