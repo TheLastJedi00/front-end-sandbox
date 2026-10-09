@@ -37,8 +37,10 @@ import { SlideDeck } from '../slide-deck/slide-deck';
         [synced]="synced()"
         [followOnly]="followOnly()"
         [showPace]="!followOnly()"
+        [canGoBack]="canGoBack()"
         (moved)="moved.emit($event)"
         (finish)="dismiss.emit()"
+        (back)="back.emit()"
       />
     </div>
   `,
@@ -88,11 +90,15 @@ export class ConceptOverlay {
   readonly synced = input<DeckPosition | null>(null);
   /** Maquina do aluno: assiste ate o professor fechar o conceito para todos. */
   readonly followOnly = input(false);
+  /** Ver `SlideDeck.canGoBack`. */
+  readonly canGoBack = input(false);
 
   /** O aluno comecou a fase — por ter chegado ao fim ou por ter pulado. */
   readonly dismiss = output<void>();
   /** Cada movimento do apresentador no mini-deck. */
   readonly moved = output<DeckPosition>();
+  /** "Voltar" do primeiro slide: o apresentador sai para o passo anterior. */
+  readonly back = output<void>();
 
   protected readonly slides = computed(() => conceptSlides(this.concept()));
 
